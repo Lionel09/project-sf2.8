@@ -1,0 +1,240 @@
+imports:
+    - { resource: parameters.yml }
+    - { resource: security.yml }
+    - { resource: services.yml }
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    locale: en
+
+framework:
+    #esi:             ~
+    #translator:      { fallbacks: ["%locale%"] }
+    secret:          "%secret%"
+    router:
+        resource: "%kernel.root_dir%/config/routing.yml"
+        strict_requirements: ~
+    form:            ~
+    csrf_protection: ~
+    validation:      { enable_annotations: true }
+    #serializer:      { enable_annotations: true }
+    templating:
+        engines: ['twig']
+        packages:
+            admingenerator_css:
+                version: 1.0
+                version_format: "%%1$s?v%%2$s" 
+            admingenerator_js:
+                version: 1.0
+                version_format: "%%1$s?v%%2$s"
+            formextensions_css:
+                version: 1.0
+                version_format: "%%1$s?v%%2$s"
+            formextensions_js:
+                version: 1.0
+                version_format: "%%1$s?v%%2$s"
+    default_locale:  "%locale%"
+    trusted_hosts:   ~
+    trusted_proxies: ~
+    session:
+        # handler_id set to null will use default session handler from php.ini
+        handler_id:  ~
+    fragments:       ~
+    http_method_override: true
+
+# Twig Configuration
+twig:
+    debug:            "%kernel.debug%"
+    strict_variables: "%kernel.debug%"
+
+# Assetic Configuration
+assetic:
+    filters:
+        uglifyjs2:
+            bin:            /usr/bin/uglifyjs
+        uglifycss:
+            bin:            /usr/bin/uglifycss
+        cssrewrite:         ~
+
+
+# Swiftmailer Configuration
+swiftmailer:
+    transport: "%mailer_transport%"
+    auth_mode: "%mailer_auth_mode%"
+    host: "%mailer_host%"
+    port: "%mailer_port%"
+    username: "%mailer_user%"
+    password: "%mailer_password%"
+    encryption: "%mailer_encryption%"
+
+    spool: { type: memory }
+
+# Propel Configuration
+propel:
+    logging: "%kernel.debug%"
+    build_properties:
+        propel.addClassLevelComment: false
+
+        propel.mysql.tableType: "InnoDB"
+        propel.builder.pluralizer.class: "builder.util.StandardEnglishPluralizer"
+
+        propel.useDateTimeClass: true
+        propel.dateTimeClass:    "DateTime"
+
+        propel.defaultTimeStampFormat: ~
+        propel.defaultTimeFormat: ~
+        propel.defaultDateFormat: ~
+        propel.defaultTimeStampFormat: Y-m-d H:i:s
+        propel.defaultTimeFormat: H:i:s
+        propel.defaultDateFormat: Y-m-d
+
+        propel.addValidateMethod: false
+
+        # Behaviors come below
+        propel.behavior.typehintable.class: "vendor.TypehintableBehavior.src.TypehintableBehavior"
+
+    dbal:
+        default_connection: "default"
+        connections:
+            default:
+                driver:               "%database_driver%"
+                user:                 "%database_user%"
+                password:             "%database_password%"
+                dsn:                  "%database_dsn%"
+# Enable persistent PDO connections.
+#                options:
+#                    ATTR_PERSISTENT: true
+                settings:
+                    charset: { value: "%database_charset%" }
+                    queries: { query: 'set names utf8' }
+
+# FOSUser Configuration
+fos_user:
+#    service:
+#        mailer:         fos_user.mailer.noop
+    user_class:         FOS\UserBundle\Propel\User
+    db_driver:          propel
+    firewall_name:      admin_area
+    from_email:
+        address:        ne-pas-repondre@cc-valleeduvicdessos.fr
+        sender_name:    Administrateur CC Vallée du Vicdessos
+
+# KNPMenu Configuration
+knp_menu:
+    twig:               # use "twig: false" to disable the Twig extension and the TwigRenderer
+        template:       knp_menu.html.twig
+    templating:         false # if true, enables the helper for PHP templates
+    default_renderer:   twig # The renderer to use, list is also available by default
+
+# Admin generator need
+jms_security_extra:
+    # Enables expression language
+    expressions: true
+
+# Admin Generator
+# https://github.com/symfony2admingenerator/GeneratorBundle/blob/master/Resources/doc/installation/configuration.md
+admingenerator_generator:
+    ## Global
+    use_doctrine_orm: false
+    use_doctrine_odm: false
+    use_propel: true
+    overwrite_if_exists: false
+    base_admin_template: AppAdminBundle::base_admin.html.twig
+    dashboard_route: AdminHomepage
+    login_route: fos_user_security_login
+    logout_route: fos_user_security_logout
+    exit_route: ~
+    generator_cache: ~
+
+    ## Twig and Templates
+    twig:
+        use_form_resources: true
+        use_localized_date: false
+        date_format: Y-m-d
+        datetime_format: Y-m-d H:i:s
+        localized_date_format: medium
+        localized_datetime_format: medium
+        number_format:
+            decimal: 0
+            decimal_point: ,
+            thousand_separator: .
+    templates_dirs: []
+    stylesheets: [] # array of {path: path_to_stylesheet, media: all}
+    javascripts: [] # array of {path: path_to_javascript, route: route_name, routeparams: [value1, value2]}
+    form_types:
+        propel:
+            TIMESTAMP:    \Admingenerator\FormExtensionsBundle\Form\Type\DateTimePickerType
+            BU_TIMESTAMP: \Admingenerator\FormExtensionsBundle\Form\Type\DateTimePickerType
+            DATE:         \Admingenerator\FormExtensionsBundle\Form\Type\DateRangePickerType
+            BU_DATE:      \Admingenerator\FormExtensionsBundle\Form\Type\DatePickerType
+            TIME:         \Symfony\Component\Form\Extension\Core\Type\TimeType 
+            FLOAT:        \Symfony\Component\Form\Extension\Core\Type\NumberType 
+            REAL:         \Symfony\Component\Form\Extension\Core\Type\NumberType 
+            DOUBLE:       \Symfony\Component\Form\Extension\Core\Type\NumberType 
+            DECIMAL:      \Symfony\Component\Form\Extension\Core\Type\NumberType 
+            TINYINT:      \Symfony\Component\Form\Extension\Core\Type\IntegerType 
+            SMALLINT:     \Symfony\Component\Form\Extension\Core\Type\IntegerType 
+            INTEGER:      \Symfony\Component\Form\Extension\Core\Type\IntegerType 
+            BIGINT:       \Symfony\Component\Form\Extension\Core\Type\IntegerType 
+            NUMERIC:      \Symfony\Component\Form\Extension\Core\Type\IntegerType 
+            CHAR:         \Symfony\Component\Form\Extension\Core\Type\TextType 
+            VARCHAR:      \Symfony\Component\Form\Extension\Core\Type\TextType 
+            LONGVARCHAR:  \Symfony\Component\Form\Extension\Core\Type\TextareaType 
+            BLOB:         \Symfony\Component\Form\Extension\Core\Type\TextareaType 
+            CLOB:         \Symfony\Component\Form\Extension\Core\Type\TextareaType 
+            CLOB_EMU:     \Symfony\Component\Form\Extension\Core\Type\TextareaType 
+            model:        \Symfony\Bridge\Propel1\Form\Type\ModelType 
+            collection:   \Symfony\Component\Form\Extension\Core\Type\CollectionType 
+            PHP_ARRAY:    \Symfony\Component\Form\Extension\Core\Type\CollectionType 
+            ENUM:         \Symfony\Component\Form\Extension\Core\Type\ChoiceType 
+            BOOLEAN:      \Symfony\Component\Form\Extension\Core\Type\CheckboxType 
+            BOOLEAN_EMU:  \Symfony\Component\Form\Extension\Core\Type\CheckboxType 
+    filter_types:
+        propel:
+            DATE:          \Admingenerator\FormExtensionsBundle\Form\Type\DateRangePickerType
+            BU_DATE:       \Admingenerator\FormExtensionsBundle\Form\Type\DateRangePickerType
+            TIMESTAMP:     \Admingenerator\FormExtensionsBundle\Form\Type\DateRangePickerType
+            BU_TIMESTAMP:  \Admingenerator\FormExtensionsBundle\Form\Type\DateRangePickerType
+            TIME:          \Symfony\Component\Form\Extension\Core\Type\TimeType
+            FLOAT:         \Symfony\Component\Form\Extension\Core\Type\NumberType
+            REAL:          \Symfony\Component\Form\Extension\Core\Type\NumberType
+            DOUBLE:        \Symfony\Component\Form\Extension\Core\Type\NumberType
+            DECIMAL:       \Symfony\Component\Form\Extension\Core\Type\NumberType
+            TINYINT:       \Symfony\Component\Form\Extension\Core\Type\NumberType
+            SMALLINT:      \Symfony\Component\Form\Extension\Core\Type\NumberType
+            INTEGER:       \Symfony\Component\Form\Extension\Core\Type\NumberType
+            BIGINT:        \Symfony\Component\Form\Extension\Core\Type\NumberType
+            NUMERIC:       \Symfony\Component\Form\Extension\Core\Type\NumberType
+            CHAR:          \Symfony\Component\Form\Extension\Core\Type\TextType
+            VARCHAR:       \Symfony\Component\Form\Extension\Core\Type\TextType
+            LONGVARCHAR:   \Symfony\Component\Form\Extension\Core\Type\TextType
+            BLOB:          \Symfony\Component\Form\Extension\Core\Type\TextType
+            CLOB:          \Symfony\Component\Form\Extension\Core\Type\TextType
+            CLOB_EMU:      \Symfony\Component\Form\Extension\Core\Type\TextType
+            model:         \Symfony\Bridge\Propel1\Form\Type\ModelType
+            collection:    \Symfony\Component\Form\Extension\Core\Type\CollectionType
+            PHP_ARRAY:     \Symfony\Component\Form\Extension\Core\Type\TextType
+            ENUM:          \Symfony\Component\Form\Extension\Core\Type\TextType
+            BOOLEAN:       \Symfony\Component\Form\Extension\Core\Type\ChoiceType
+            BOOLEAN_EMU:   \Symfony\Component\Form\Extension\Core\Type\ChoiceType
+
+# Default bundle configuration
+admingenerator_form_extensions:
+    upload_manager:           ~
+    image_manipulator:        ~
+    twig:
+        use_form_resources:     true
+    # collection_upload:
+    #     async_listener_enabled: false
+    #     async_route_name:       ~
+    #     file_storage:           admingenerator.form.file_storage.local
+    # you need these JS assets for some form types
+    # if you set it to true, the bundle will include them for you
+    # otherwise you have to do it manually
+    include_jquery:           false
+    include_jqueryui:         false
+    include_momentjs:         true
+    include_blueimp:          false 
+    include_gmaps:            false
+

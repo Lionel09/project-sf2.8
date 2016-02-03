@@ -1,0 +1,9 @@
+services:
+    admingen.menu.default_builder:
+        class: App\AdminBundle\Menu\AdminMenu
+        arguments:
+            - @knp_menu.factory
+            - @request_stack
+            - AdminHomepage
+        tags:
+            - { name: knp_menu.menu_builder, method: sidebarMenu, alias: admingen_mysidebar }

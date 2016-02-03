@@ -1,0 +1,15 @@
+{% extends "AppAdminBundle::base_admin.html.twig" %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+    
+{% block title %}
+    {{ parent() }} - Accueil
+{% endblock %}
+
+{% block body %}
+    <div id="stats">
+    </div>
+    {{ parent() }}
+{% endblock %}
