@@ -34,8 +34,8 @@ class AppKernel extends Kernel
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
 
-            // Project Bundle
-            new App\AdminBundle\AppAdminBundle(),
+            // Project
+            new AdminBundle\AdminBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'), true)) {

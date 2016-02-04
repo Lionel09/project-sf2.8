@@ -2,6 +2,7 @@ imports:
     - { resource: parameters.yml }
     - { resource: security.yml }
     - { resource: services.yml }
+    - { resource: "@AdminBundle/Resources/config/services.yml" }
 
 # Put parameters here that don't need to change on each machine where the app is deployed
 # http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
@@ -117,8 +118,8 @@ fos_user:
     db_driver:          propel
     firewall_name:      admin_area
     from_email:
-        address:        ne-pas-repondre@cc-valleeduvicdessos.fr
-        sender_name:    Administrateur CC Vallée du Vicdessos
+        address:        ne-pas-repondre@newproject.fr
+        sender_name:    Administrateur
 
 # KNPMenu Configuration
 knp_menu:
@@ -140,7 +141,7 @@ admingenerator_generator:
     use_doctrine_odm: false
     use_propel: true
     overwrite_if_exists: false
-    base_admin_template: AppAdminBundle::base_admin.html.twig
+    base_admin_template: AdminBundle::base_admin.html.twig
     dashboard_route: AdminHomepage
     login_route: fos_user_security_login
     logout_route: fos_user_security_logout
