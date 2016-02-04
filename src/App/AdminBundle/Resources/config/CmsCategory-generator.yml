@@ -27,7 +27,7 @@ builders:
     new:
         params:
             title: New object for AdminBundle
-            display: ~
+            display: [ title, created_at, updated_at ]
             actions:
                 save: ~
                 list: ~

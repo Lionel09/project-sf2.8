@@ -2768,16 +2768,16 @@
         },
         {
             "name": "symfony2admingenerator/generator-bundle",
-            "version": "v2.0.2",
+            "version": "v2.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony2admingenerator/GeneratorBundle.git",
-                "reference": "46f1fa7b4057a1649e9b921c2549c6a4f18b69f5"
+                "reference": "d36cf9287ef367ae8a93c88a696229b53b163827"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony2admingenerator/GeneratorBundle/zipball/46f1fa7b4057a1649e9b921c2549c6a4f18b69f5",
-                "reference": "46f1fa7b4057a1649e9b921c2549c6a4f18b69f5",
+                "url": "https://api.github.com/repos/symfony2admingenerator/GeneratorBundle/zipball/d36cf9287ef367ae8a93c88a696229b53b163827",
+                "reference": "d36cf9287ef367ae8a93c88a696229b53b163827",
                 "shasum": ""
             },
             "require": {
@@ -2834,7 +2834,7 @@
                 "generator",
                 "yaml"
             ],
-            "time": "2016-02-02 22:18:27"
+            "time": "2016-02-03 21:45:27"
         },
         {
             "name": "symfony2admingenerator/twig-generator",
