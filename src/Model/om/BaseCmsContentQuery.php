@@ -14,8 +14,10 @@ use \PropelObjectCollection;
 use \PropelPDO;
 use Model\CmsCategory;
 use Model\CmsContent;
+use Model\CmsContentHasTypes;
 use Model\CmsContentPeer;
 use Model\CmsContentQuery;
+use Model\CmsType;
 
 /**
  * @method CmsContentQuery orderById($order = Criteria::ASC) Order by the id column
@@ -43,6 +45,10 @@ use Model\CmsContentQuery;
  * @method CmsContentQuery leftJoinCmsCategory($relationAlias = null) Adds a LEFT JOIN clause to the query using the CmsCategory relation
  * @method CmsContentQuery rightJoinCmsCategory($relationAlias = null) Adds a RIGHT JOIN clause to the query using the CmsCategory relation
  * @method CmsContentQuery innerJoinCmsCategory($relationAlias = null) Adds a INNER JOIN clause to the query using the CmsCategory relation
+ *
+ * @method CmsContentQuery leftJoinCmsContentHasTypes($relationAlias = null) Adds a LEFT JOIN clause to the query using the CmsContentHasTypes relation
+ * @method CmsContentQuery rightJoinCmsContentHasTypes($relationAlias = null) Adds a RIGHT JOIN clause to the query using the CmsContentHasTypes relation
+ * @method CmsContentQuery innerJoinCmsContentHasTypes($relationAlias = null) Adds a INNER JOIN clause to the query using the CmsContentHasTypes relation
  *
  * @method CmsContent findOne(PropelPDO $con = null) Return the first CmsContent matching the query
  * @method CmsContent findOneOrCreate(PropelPDO $con = null) Return the first CmsContent matching the query, or a new CmsContent object populated from the query conditions when no match is found
@@ -617,6 +623,97 @@ abstract class BaseCmsContentQuery extends ModelCriteria
         return $this
             ->joinCmsCategory($relationAlias, $joinType)
             ->useQuery($relationAlias ? $relationAlias : 'CmsCategory', '\Model\CmsCategoryQuery');
+    }
+
+    /**
+     * Filter the query by a related CmsContentHasTypes object
+     *
+     * @param   CmsContentHasTypes|PropelObjectCollection $cmsContentHasTypes  the related object to use as filter
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return                 CmsContentQuery The current query, for fluid interface
+     * @throws PropelException - if the provided filter is invalid.
+     */
+    public function filterByCmsContentHasTypes($cmsContentHasTypes, $comparison = null)
+    {
+        if ($cmsContentHasTypes instanceof CmsContentHasTypes) {
+            return $this
+                ->addUsingAlias(CmsContentPeer::ID, $cmsContentHasTypes->getCmsContentId(), $comparison);
+        } elseif ($cmsContentHasTypes instanceof PropelObjectCollection) {
+            return $this
+                ->useCmsContentHasTypesQuery()
+                ->filterByPrimaryKeys($cmsContentHasTypes->getPrimaryKeys())
+                ->endUse();
+        } else {
+            throw new PropelException('filterByCmsContentHasTypes() only accepts arguments of type CmsContentHasTypes or PropelCollection');
+        }
+    }
+
+    /**
+     * Adds a JOIN clause to the query using the CmsContentHasTypes relation
+     *
+     * @param     string $relationAlias optional alias for the relation
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return CmsContentQuery The current query, for fluid interface
+     */
+    public function joinCmsContentHasTypes($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+    {
+        $tableMap = $this->getTableMap();
+        $relationMap = $tableMap->getRelation('CmsContentHasTypes');
+
+        // create a ModelJoin object for this join
+        $join = new ModelJoin();
+        $join->setJoinType($joinType);
+        $join->setRelationMap($relationMap, $this->useAliasInSQL ? $this->getModelAlias() : null, $relationAlias);
+        if ($previousJoin = $this->getPreviousJoin()) {
+            $join->setPreviousJoin($previousJoin);
+        }
+
+        // add the ModelJoin to the current object
+        if ($relationAlias) {
+            $this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
+            $this->addJoinObject($join, $relationAlias);
+        } else {
+            $this->addJoinObject($join, 'CmsContentHasTypes');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Use the CmsContentHasTypes relation CmsContentHasTypes object
+     *
+     * @see       useQuery()
+     *
+     * @param     string $relationAlias optional alias for the relation,
+     *                                   to be used as main alias in the secondary query
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return   \Model\CmsContentHasTypesQuery A secondary query class using the current class as primary query
+     */
+    public function useCmsContentHasTypesQuery($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+    {
+        return $this
+            ->joinCmsContentHasTypes($relationAlias, $joinType)
+            ->useQuery($relationAlias ? $relationAlias : 'CmsContentHasTypes', '\Model\CmsContentHasTypesQuery');
+    }
+
+    /**
+     * Filter the query by a related CmsType object
+     * using the cms_content_has_types table as cross reference
+     *
+     * @param   CmsType $cmsType the related object to use as filter
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return   CmsContentQuery The current query, for fluid interface
+     */
+    public function filterByCmsType($cmsType, $comparison = Criteria::EQUAL)
+    {
+        return $this
+            ->useCmsContentHasTypesQuery()
+            ->filterByCmsType($cmsType, $comparison)
+            ->endUse();
     }
 
     /**

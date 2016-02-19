@@ -20,8 +20,14 @@ class AppKernel extends Kernel
             new JMS\SecurityExtraBundle\JMSSecurityExtraBundle(),
 
             // Propel
+            // propel-bundle 1.5
+            // "propel/propel-bundle": "1.5.x@dev",
+            // "propel/propel-acl-bundle": "1.5.x@dev",
             new Propel\Bundle\PropelBundle\PropelBundle(),
             new Propel\Bundle\PropelAclBundle\PropelAclBundle(),
+            // propel-bundle 1.4
+            // new Propel\PropelBundle\PropelBundle(),
+
 
             // FOSUserBundle
             new FOS\UserBundle\FOSUserBundle(),

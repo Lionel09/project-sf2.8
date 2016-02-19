@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "f409570223bc115557d1bf1c57404024",
-    "content-hash": "e611731b34a7e00068a3cb4eebb69ff0",
+    "hash": "799bb1111190f576eccbe1d3e551c11f",
+    "content-hash": "163905d479b78c1b41124dea113c8bf2",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -1228,16 +1228,16 @@
         },
         {
             "name": "paragonie/random_compat",
-            "version": "1.1.6",
+            "version": "v1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/paragonie/random_compat.git",
-                "reference": "e6f80ab77885151908d0ec743689ca700886e8b0"
+                "reference": "b0e69d10852716b2ccbdff69c75c477637220790"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/e6f80ab77885151908d0ec743689ca700886e8b0",
-                "reference": "e6f80ab77885151908d0ec743689ca700886e8b0",
+                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/b0e69d10852716b2ccbdff69c75c477637220790",
+                "reference": "b0e69d10852716b2ccbdff69c75c477637220790",
                 "shasum": ""
             },
             "require": {
@@ -1272,7 +1272,7 @@
                 "pseudorandom",
                 "random"
             ],
-            "time": "2016-01-29 16:19:52"
+            "time": "2016-02-06 03:52:05"
         },
         {
             "name": "phing/phing",
@@ -1416,20 +1416,20 @@
         },
         {
             "name": "propel/propel-acl-bundle",
-            "version": "1.5.x-dev",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/propelorm/PropelAclBundle.git",
-                "reference": "416a9f57d6ffb57678083173e5e74156cc0bbdf0"
+                "reference": "e24a6df06f513a3d4da96d359254e61ab6a31233"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/propelorm/PropelAclBundle/zipball/416a9f57d6ffb57678083173e5e74156cc0bbdf0",
-                "reference": "416a9f57d6ffb57678083173e5e74156cc0bbdf0",
+                "url": "https://api.github.com/repos/propelorm/PropelAclBundle/zipball/e24a6df06f513a3d4da96d359254e61ab6a31233",
+                "reference": "e24a6df06f513a3d4da96d359254e61ab6a31233",
                 "shasum": ""
             },
             "require": {
-                "propel/propel-bundle": "1.5.x@dev",
+                "propel/propel-bundle": "~1.5.0",
                 "symfony/security-acl": "@stable"
             },
             "require-dev": {
@@ -1464,20 +1464,20 @@
                 "security",
                 "symfony"
             ],
-            "time": "2016-01-31 12:36:50"
+            "time": "2016-02-11 18:48:47"
         },
         {
             "name": "propel/propel-bundle",
-            "version": "1.5.x-dev",
+            "version": "1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/propelorm/PropelBundle.git",
-                "reference": "bb85f7500832ade0df632b113710fb649348b4ee"
+                "reference": "9402959f26bbac16ceffc655f042b7cf5d58d426"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/propelorm/PropelBundle/zipball/bb85f7500832ade0df632b113710fb649348b4ee",
-                "reference": "bb85f7500832ade0df632b113710fb649348b4ee",
+                "url": "https://api.github.com/repos/propelorm/PropelBundle/zipball/9402959f26bbac16ceffc655f042b7cf5d58d426",
+                "reference": "9402959f26bbac16ceffc655f042b7cf5d58d426",
                 "shasum": ""
             },
             "require": {
@@ -1504,6 +1504,9 @@
                 "psr-4": {
                     "Propel\\Bundle\\PropelBundle\\": ""
                 },
+                "files": [
+                    "autoload_aliases.php"
+                ],
                 "exclude-from-classmap": [
                     "Tests/"
                 ]
@@ -1524,7 +1527,7 @@
                 "persistence",
                 "propel"
             ],
-            "time": "2016-01-24 12:07:04"
+            "time": "2016-02-15 21:33:58"
         },
         {
             "name": "propel/propel1",
@@ -1629,16 +1632,16 @@
         },
         {
             "name": "sensio/distribution-bundle",
-            "version": "v5.0.3",
+            "version": "v5.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensiolabs/SensioDistributionBundle.git",
-                "reference": "419c1824af940e2be0f833aca2327e1181a6b503"
+                "reference": "2c167426fc24f9de116345195bc1697a748ee847"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/419c1824af940e2be0f833aca2327e1181a6b503",
-                "reference": "419c1824af940e2be0f833aca2327e1181a6b503",
+                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/2c167426fc24f9de116345195bc1697a748ee847",
+                "reference": "2c167426fc24f9de116345195bc1697a748ee847",
                 "shasum": ""
             },
             "require": {
@@ -1677,7 +1680,7 @@
                 "configuration",
                 "distribution"
             ],
-            "time": "2015-12-18 17:44:11"
+            "time": "2016-02-12 16:21:30"
         },
         {
             "name": "sensio/framework-extra-bundle",
@@ -2768,16 +2771,16 @@
         },
         {
             "name": "symfony2admingenerator/generator-bundle",
-            "version": "v2.0.3",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony2admingenerator/GeneratorBundle.git",
-                "reference": "d36cf9287ef367ae8a93c88a696229b53b163827"
+                "reference": "8d580384351e84a8353fad53f9d9abd9c52c26bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony2admingenerator/GeneratorBundle/zipball/d36cf9287ef367ae8a93c88a696229b53b163827",
-                "reference": "d36cf9287ef367ae8a93c88a696229b53b163827",
+                "url": "https://api.github.com/repos/symfony2admingenerator/GeneratorBundle/zipball/8d580384351e84a8353fad53f9d9abd9c52c26bb",
+                "reference": "8d580384351e84a8353fad53f9d9abd9c52c26bb",
                 "shasum": ""
             },
             "require": {
@@ -2834,7 +2837,7 @@
                 "generator",
                 "yaml"
             ],
-            "time": "2016-02-03 21:45:27"
+            "time": "2016-02-16 19:05:01"
         },
         {
             "name": "symfony2admingenerator/twig-generator",
@@ -3156,9 +3159,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "propel/propel-bundle": 20,
-        "propel/propel-acl-bundle": 20,
-        "symfony2admingenerator/generator-bundle": 10,
+        "symfony2admingenerator/generator-bundle": 20,
         "symfony2admingenerator/form-bundle": 0,
         "symfony2admingenerator/form-extensions-bundle": 20
     },

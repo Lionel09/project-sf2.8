@@ -1,0 +1,19 @@
+Model\CmsCategory:
+    category1:
+        title:      Category 1
+    category2:
+        title:      Category 2
+    category3:
+        title:      Category 3
+    category4:
+        title:      Category 4
+
+Model\CmsType:
+    type1:
+        title:      type 1
+    type2:
+        title:      type 2
+    type3:
+        title:      type 3
+    type4:
+        title:      type 4

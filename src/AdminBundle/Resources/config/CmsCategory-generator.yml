@@ -27,7 +27,7 @@ builders:
     new:
         params:
             title: New object for AdminBundle
-            display: ~
+            display: [ title ]
             actions:
                 save: ~
                 list: ~
@@ -35,6 +35,13 @@ builders:
         params:
             title: "You're editing the object \"%object%\"|{ %object%: CmsCategory.title }|"
             display: ~
+            fields:
+                created_at:
+                    addFormOptions:
+                        widget:                 single_text
+                updated_at:
+                    addFormOptions:
+                        widget:                 single_text
             actions:
                 save: ~
                 list: ~

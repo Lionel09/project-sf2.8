@@ -27,14 +27,30 @@ builders:
     new:
         params:
             title: New object for AdminBundle
-            display: ~
+            display:
+                "Fields":            [ cms_category, cms_types, title ]
+            fields:
+                cms_types:
+                    formType:                   model
+                    addFormOptions:
+                        multiple:               true
+                        class:                  Model\CmsType
+                        # query:                  \Model\CmsTypeQuery::create()->orderById() 
             actions:
                 save: ~
                 list: ~
     edit:
         params:
             title: "You're editing the object \"%object%\"|{ %object%: CmsContent.title }|"
-            display: ~
+            display:
+                "Fields":            [ cms_category, cms_types, title ]
+            fields:
+                cms_types:
+                    formType:                   model
+                    addFormOptions:
+                        multiple:               true
+                        class:                  Model\CmsType
+                        query:                  \Model\CmsTypeQuery::create()->orderById() 
             actions:
                 save: ~
                 list: ~

@@ -2,9 +2,9 @@
 
 namespace Model;
 
-use Model\om\BaseCmsCategory;
+use Model\om\BaseCmsType;
 
-class CmsCategory extends BaseCmsCategory
+class CmsType extends BaseCmsType
 {
     public function __toString()
     {

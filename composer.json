@@ -20,8 +20,8 @@
         "symfony/swiftmailer-bundle": "~2.3",
         "symfony/monolog-bundle": "~2.4",
 
-        "propel/propel-bundle": "1.5.x@dev",
-        "propel/propel-acl-bundle": "1.5.x@dev",
+        "propel/propel-bundle": "~1.5",
+        "propel/propel-acl-bundle": "~1.5",
         "willdurand/propel-typehintable-behavior": "1.0.4",
 
         "sensio/distribution-bundle": "~5.0",
@@ -33,7 +33,7 @@
         "jms/security-extra-bundle": "^1.5",
         "jms/di-extra-bundle": "^1.6",
 
-        "symfony2admingenerator/generator-bundle": "^2.0@beta",
+        "symfony2admingenerator/generator-bundle": "dev-master",
         "symfony2admingenerator/form-bundle": "@stable",
         "symfony2admingenerator/form-extensions-bundle": "dev-master"
     },

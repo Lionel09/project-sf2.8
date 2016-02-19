@@ -7,7 +7,7 @@ use \TableMap;
 
 
 /**
- * This class defines the structure of the 'cms_content' table.
+ * This class defines the structure of the 'cms_content_has_types' table.
  *
  *
  *
@@ -18,13 +18,13 @@ use \TableMap;
  *
  * @package    propel.generator.src.Model.map
  */
-class CmsContentTableMap extends TableMap
+class CmsContentHasTypesTableMap extends TableMap
 {
 
     /**
      * The (dot-path) name of this class
      */
-    const CLASS_NAME = 'src.Model.map.CmsContentTableMap';
+    const CLASS_NAME = 'src.Model.map.CmsContentHasTypesTableMap';
 
     /**
      * Initialize the table attributes, columns and validators
@@ -36,18 +36,16 @@ class CmsContentTableMap extends TableMap
     public function initialize()
     {
         // attributes
-        $this->setName('cms_content');
-        $this->setPhpName('CmsContent');
-        $this->setClassname('Model\\CmsContent');
+        $this->setName('cms_content_has_types');
+        $this->setPhpName('CmsContentHasTypes');
+        $this->setClassname('Model\\CmsContentHasTypes');
         $this->setPackage('src.Model');
         $this->setUseIdGenerator(true);
+        $this->setIsCrossRef(true);
         // columns
         $this->addPrimaryKey('id', 'Id', 'INTEGER', true, null, null);
-        $this->addForeignKey('cms_category_id', 'CmsCategoryId', 'INTEGER', 'cms_category', 'id', false, null, null);
-        $this->addColumn('title', 'Title', 'VARCHAR', false, 250, null);
-        $this->addColumn('summary', 'Summary', 'LONGVARCHAR', false, null, null);
-        $this->addColumn('description', 'Description', 'LONGVARCHAR', false, null, null);
-        $this->addColumn('online', 'Online', 'BOOLEAN', false, 1, null);
+        $this->addForeignKey('cms_content_id', 'CmsContentId', 'INTEGER', 'cms_content', 'id', true, null, null);
+        $this->addForeignKey('cms_type_id', 'CmsTypeId', 'INTEGER', 'cms_type', 'id', true, null, null);
         $this->addColumn('created_at', 'CreatedAt', 'TIMESTAMP', false, null, null);
         $this->addColumn('updated_at', 'UpdatedAt', 'TIMESTAMP', false, null, null);
         // validators
@@ -58,9 +56,8 @@ class CmsContentTableMap extends TableMap
      */
     public function buildRelations()
     {
-        $this->addRelation('CmsCategory', 'Model\\CmsCategory', RelationMap::MANY_TO_ONE, array('cms_category_id' => 'id', ), 'SET NULL', 'CASCADE');
-        $this->addRelation('CmsContentHasTypes', 'Model\\CmsContentHasTypes', RelationMap::ONE_TO_MANY, array('id' => 'cms_content_id', ), 'CASCADE', 'CASCADE', 'CmsContentHasTypess');
-        $this->addRelation('CmsType', 'Model\\CmsType', RelationMap::MANY_TO_MANY, array(), 'CASCADE', 'CASCADE', 'CmsTypes');
+        $this->addRelation('CmsContent', 'Model\\CmsContent', RelationMap::MANY_TO_ONE, array('cms_content_id' => 'id', ), 'CASCADE', 'CASCADE');
+        $this->addRelation('CmsType', 'Model\\CmsType', RelationMap::MANY_TO_ONE, array('cms_type_id' => 'id', ), 'CASCADE', 'CASCADE');
     } // buildRelations()
 
     /**
@@ -77,7 +74,11 @@ class CmsContentTableMap extends TableMap
   'update_column' => 'updated_at',
   'disable_updated_at' => 'false',
 ),
+            'query_cache' =>  array (
+  'backend' => 'apc',
+  'lifetime' => 3600,
+),
         );
     } // getBehaviors()
 
-} // CmsContentTableMap
+} // CmsContentHasTypesTableMap

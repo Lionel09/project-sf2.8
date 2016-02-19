@@ -11,7 +11,7 @@ parameters:
 
 framework:
     #esi:             ~
-    #translator:      { fallbacks: ["%locale%"] }
+    translator:      { fallbacks: ["%locale%"] }
     secret:          "%secret%"
     router:
         resource: "%kernel.root_dir%/config/routing.yml"
@@ -86,9 +86,9 @@ propel:
         propel.defaultTimeStampFormat: ~
         propel.defaultTimeFormat: ~
         propel.defaultDateFormat: ~
-        propel.defaultTimeStampFormat: Y-m-d H:i:s
-        propel.defaultTimeFormat: H:i:s
-        propel.defaultDateFormat: Y-m-d
+        propel.defaultTimeStampFormat: ~
+        propel.defaultTimeFormat: ~
+        propel.defaultDateFormat: ~
 
         propel.addValidateMethod: false
 
@@ -185,7 +185,7 @@ admingenerator_generator:
             BLOB:         Symfony\Component\Form\Extension\Core\Type\TextareaType 
             CLOB:         Symfony\Component\Form\Extension\Core\Type\TextareaType 
             CLOB_EMU:     Symfony\Component\Form\Extension\Core\Type\TextareaType 
-            model:        Symfony\Bridge\Propel1\Form\Type\ModelType 
+            model:        Propel\Bundle\PropelBundle\Form\Type\ModelType
             collection:   Symfony\Component\Form\Extension\Core\Type\CollectionType 
             PHP_ARRAY:    Symfony\Component\Form\Extension\Core\Type\CollectionType 
             ENUM:         Symfony\Component\Form\Extension\Core\Type\ChoiceType 
@@ -213,7 +213,7 @@ admingenerator_generator:
             BLOB:          Symfony\Component\Form\Extension\Core\Type\TextType
             CLOB:          Symfony\Component\Form\Extension\Core\Type\TextType
             CLOB_EMU:      Symfony\Component\Form\Extension\Core\Type\TextType
-            model:         Symfony\Bridge\Propel1\Form\Type\ModelType
+            model:         Propel\Bundle\PropelBundle\Form\Type\ModelType
             collection:    Symfony\Component\Form\Extension\Core\Type\CollectionType
             PHP_ARRAY:     Symfony\Component\Form\Extension\Core\Type\TextType
             ENUM:          Symfony\Component\Form\Extension\Core\Type\TextType

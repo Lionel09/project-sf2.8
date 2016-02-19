@@ -15,24 +15,26 @@ use \PropelDateTime;
 use \PropelException;
 use \PropelObjectCollection;
 use \PropelPDO;
-use Model\CmsCategory;
-use Model\CmsCategoryPeer;
-use Model\CmsCategoryQuery;
 use Model\CmsContent;
+use Model\CmsContentHasTypes;
+use Model\CmsContentHasTypesQuery;
 use Model\CmsContentQuery;
+use Model\CmsType;
+use Model\CmsTypePeer;
+use Model\CmsTypeQuery;
 
-abstract class BaseCmsCategory extends BaseObject implements Persistent
+abstract class BaseCmsType extends BaseObject implements Persistent
 {
     /**
      * Peer class name
      */
-    const PEER = 'Model\\CmsCategoryPeer';
+    const PEER = 'Model\\CmsTypePeer';
 
     /**
      * The Peer class.
      * Instance provides a convenient way of calling static methods on a class
      * that calling code may not be able to identify.
-     * @var        CmsCategoryPeer
+     * @var        CmsTypePeer
      */
     protected static $peer;
 
@@ -55,18 +57,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     protected $title;
 
     /**
-     * The value for the online field.
-     * @var        boolean
-     */
-    protected $online;
-
-    /**
-     * The value for the sortable_rank field.
-     * @var        int
-     */
-    protected $sortable_rank;
-
-    /**
      * The value for the created_at field.
      * @var        string
      */
@@ -79,10 +69,15 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     protected $updated_at;
 
     /**
+     * @var        PropelObjectCollection|CmsContentHasTypes[] Collection to store aggregation of CmsContentHasTypes objects.
+     */
+    protected $collCmsContentHasTypess;
+    protected $collCmsContentHasTypessPartial;
+
+    /**
      * @var        PropelObjectCollection|CmsContent[] Collection to store aggregation of CmsContent objects.
      */
     protected $collCmsContents;
-    protected $collCmsContentsPartial;
 
     /**
      * Flag to prevent endless save loop, if this object is referenced
@@ -104,19 +99,17 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     protected $alreadyInClearAllReferencesDeep = false;
 
-    // sortable behavior
-
-    /**
-     * Queries to be executed in the save transaction
-     * @var        array
-     */
-    protected $sortableQueries = array();
-
     /**
      * An array of objects scheduled for deletion.
      * @var		PropelObjectCollection
      */
     protected $cmsContentsScheduledForDeletion = null;
+
+    /**
+     * An array of objects scheduled for deletion.
+     * @var		PropelObjectCollection
+     */
+    protected $cmsContentHasTypessScheduledForDeletion = null;
 
     /**
      * Get the [id] column value.
@@ -138,28 +131,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     {
 
         return $this->title;
-    }
-
-    /**
-     * Get the [online] column value.
-     *
-     * @return boolean
-     */
-    public function getOnline()
-    {
-
-        return $this->online;
-    }
-
-    /**
-     * Get the [sortable_rank] column value.
-     *
-     * @return int
-     */
-    public function getSortableRank()
-    {
-
-        return $this->sortable_rank;
     }
 
     /**
@@ -246,7 +217,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * Set the value of [id] column.
      *
      * @param  int $v new value
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      */
     public function setId($v)
     {
@@ -256,7 +227,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
 
         if ($this->id !== $v) {
             $this->id = $v;
-            $this->modifiedColumns[] = CmsCategoryPeer::ID;
+            $this->modifiedColumns[] = CmsTypePeer::ID;
         }
 
 
@@ -267,7 +238,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * Set the value of [title] column.
      *
      * @param  string $v new value
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      */
     public function setTitle($v)
     {
@@ -277,7 +248,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
 
         if ($this->title !== $v) {
             $this->title = $v;
-            $this->modifiedColumns[] = CmsCategoryPeer::TITLE;
+            $this->modifiedColumns[] = CmsTypePeer::TITLE;
         }
 
 
@@ -285,61 +256,11 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     } // setTitle()
 
     /**
-     * Sets the value of the [online] column.
-     * Non-boolean arguments are converted using the following rules:
-     *   * 1, '1', 'true',  'on',  and 'yes' are converted to boolean true
-     *   * 0, '0', 'false', 'off', and 'no'  are converted to boolean false
-     * Check on string values is case insensitive (so 'FaLsE' is seen as 'false').
-     *
-     * @param boolean|integer|string $v The new value
-     * @return CmsCategory The current object (for fluent API support)
-     */
-    public function setOnline($v)
-    {
-        if ($v !== null) {
-            if (is_string($v)) {
-                $v = in_array(strtolower($v), array('false', 'off', '-', 'no', 'n', '0', '')) ? false : true;
-            } else {
-                $v = (boolean) $v;
-            }
-        }
-
-        if ($this->online !== $v) {
-            $this->online = $v;
-            $this->modifiedColumns[] = CmsCategoryPeer::ONLINE;
-        }
-
-
-        return $this;
-    } // setOnline()
-
-    /**
-     * Set the value of [sortable_rank] column.
-     *
-     * @param  int $v new value
-     * @return CmsCategory The current object (for fluent API support)
-     */
-    public function setSortableRank($v)
-    {
-        if ($v !== null && is_numeric($v)) {
-            $v = (int) $v;
-        }
-
-        if ($this->sortable_rank !== $v) {
-            $this->sortable_rank = $v;
-            $this->modifiedColumns[] = CmsCategoryPeer::SORTABLE_RANK;
-        }
-
-
-        return $this;
-    } // setSortableRank()
-
-    /**
      * Sets the value of [created_at] column to a normalized version of the date/time value specified.
      *
      * @param mixed $v string, integer (timestamp), or DateTime value.
      *               Empty strings are treated as null.
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      */
     public function setCreatedAt($v)
     {
@@ -349,7 +270,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
             $newDateAsString = $dt ? $dt->format('Y-m-d H:i:s') : null;
             if ($currentDateAsString !== $newDateAsString) {
                 $this->created_at = $newDateAsString;
-                $this->modifiedColumns[] = CmsCategoryPeer::CREATED_AT;
+                $this->modifiedColumns[] = CmsTypePeer::CREATED_AT;
             }
         } // if either are not null
 
@@ -362,7 +283,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      *
      * @param mixed $v string, integer (timestamp), or DateTime value.
      *               Empty strings are treated as null.
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      */
     public function setUpdatedAt($v)
     {
@@ -372,7 +293,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
             $newDateAsString = $dt ? $dt->format('Y-m-d H:i:s') : null;
             if ($currentDateAsString !== $newDateAsString) {
                 $this->updated_at = $newDateAsString;
-                $this->modifiedColumns[] = CmsCategoryPeer::UPDATED_AT;
+                $this->modifiedColumns[] = CmsTypePeer::UPDATED_AT;
             }
         } // if either are not null
 
@@ -414,10 +335,8 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
 
             $this->id = ($row[$startcol + 0] !== null) ? (int) $row[$startcol + 0] : null;
             $this->title = ($row[$startcol + 1] !== null) ? (string) $row[$startcol + 1] : null;
-            $this->online = ($row[$startcol + 2] !== null) ? (boolean) $row[$startcol + 2] : null;
-            $this->sortable_rank = ($row[$startcol + 3] !== null) ? (int) $row[$startcol + 3] : null;
-            $this->created_at = ($row[$startcol + 4] !== null) ? (string) $row[$startcol + 4] : null;
-            $this->updated_at = ($row[$startcol + 5] !== null) ? (string) $row[$startcol + 5] : null;
+            $this->created_at = ($row[$startcol + 2] !== null) ? (string) $row[$startcol + 2] : null;
+            $this->updated_at = ($row[$startcol + 3] !== null) ? (string) $row[$startcol + 3] : null;
             $this->resetModified();
 
             $this->setNew(false);
@@ -427,10 +346,10 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
             }
             $this->postHydrate($row, $startcol, $rehydrate);
 
-            return $startcol + 6; // 6 = CmsCategoryPeer::NUM_HYDRATE_COLUMNS.
+            return $startcol + 4; // 4 = CmsTypePeer::NUM_HYDRATE_COLUMNS.
 
         } catch (Exception $e) {
-            throw new PropelException("Error populating CmsCategory object", $e);
+            throw new PropelException("Error populating CmsType object", $e);
         }
     }
 
@@ -473,13 +392,13 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         }
 
         if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME, Propel::CONNECTION_READ);
+            $con = Propel::getConnection(CmsTypePeer::DATABASE_NAME, Propel::CONNECTION_READ);
         }
 
         // We don't need to alter the object instance pool; we're just modifying this instance
         // already in the pool.
 
-        $stmt = CmsCategoryPeer::doSelectStmt($this->buildPkeyCriteria(), $con);
+        $stmt = CmsTypePeer::doSelectStmt($this->buildPkeyCriteria(), $con);
         $row = $stmt->fetch(PDO::FETCH_NUM);
         $stmt->closeCursor();
         if (!$row) {
@@ -489,8 +408,9 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
 
         if ($deep) {  // also de-associate any related objects?
 
-            $this->collCmsContents = null;
+            $this->collCmsContentHasTypess = null;
 
+            $this->collCmsContents = null;
         } // if (deep)
     }
 
@@ -511,19 +431,14 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         }
 
         if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME, Propel::CONNECTION_WRITE);
+            $con = Propel::getConnection(CmsTypePeer::DATABASE_NAME, Propel::CONNECTION_WRITE);
         }
 
         $con->beginTransaction();
         try {
-            $deleteQuery = CmsCategoryQuery::create()
+            $deleteQuery = CmsTypeQuery::create()
                 ->filterByPrimaryKey($this->getPrimaryKey());
             $ret = $this->preDelete($con);
-            // sortable behavior
-
-            CmsCategoryPeer::shiftRank(-1, $this->getSortableRank() + 1, null, $con);
-            CmsCategoryPeer::clearInstancePool();
-
             if ($ret) {
                 $deleteQuery->delete($con);
                 $this->postDelete($con);
@@ -559,33 +474,26 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         }
 
         if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME, Propel::CONNECTION_WRITE);
+            $con = Propel::getConnection(CmsTypePeer::DATABASE_NAME, Propel::CONNECTION_WRITE);
         }
 
         $con->beginTransaction();
         $isInsert = $this->isNew();
         try {
             $ret = $this->preSave($con);
-            // sortable behavior
-            $this->processSortableQueries($con);
             if ($isInsert) {
                 $ret = $ret && $this->preInsert($con);
-                // sortable behavior
-                if (!$this->isColumnModified(CmsCategoryPeer::RANK_COL)) {
-                    $this->setSortableRank(CmsCategoryQuery::create()->getMaxRankArray($con) + 1);
-                }
-
                 // timestampable behavior
-                if (!$this->isColumnModified(CmsCategoryPeer::CREATED_AT)) {
+                if (!$this->isColumnModified(CmsTypePeer::CREATED_AT)) {
                     $this->setCreatedAt(time());
                 }
-                if (!$this->isColumnModified(CmsCategoryPeer::UPDATED_AT)) {
+                if (!$this->isColumnModified(CmsTypePeer::UPDATED_AT)) {
                     $this->setUpdatedAt(time());
                 }
             } else {
                 $ret = $ret && $this->preUpdate($con);
                 // timestampable behavior
-                if ($this->isModified() && !$this->isColumnModified(CmsCategoryPeer::UPDATED_AT)) {
+                if ($this->isModified() && !$this->isColumnModified(CmsTypePeer::UPDATED_AT)) {
                     $this->setUpdatedAt(time());
                 }
             }
@@ -597,7 +505,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
                     $this->postUpdate($con);
                 }
                 $this->postSave($con);
-                CmsCategoryPeer::addInstanceToPool($this);
+                CmsTypePeer::addInstanceToPool($this);
             } else {
                 $affectedRows = 0;
             }
@@ -640,16 +548,41 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
 
             if ($this->cmsContentsScheduledForDeletion !== null) {
                 if (!$this->cmsContentsScheduledForDeletion->isEmpty()) {
-                    foreach ($this->cmsContentsScheduledForDeletion as $cmsContent) {
-                        // need to save related object because we set the relation to null
+                    $pks = array();
+                    $pk = $this->getPrimaryKey();
+                    foreach ($this->cmsContentsScheduledForDeletion->getPrimaryKeys(false) as $remotePk) {
+                        $pks[] = array($remotePk, $pk);
+                    }
+                    CmsContentHasTypesQuery::create()
+                        ->filterByPrimaryKeys($pks)
+                        ->delete($con);
+                    $this->cmsContentsScheduledForDeletion = null;
+                }
+
+                foreach ($this->getCmsContents() as $cmsContent) {
+                    if ($cmsContent->isModified()) {
                         $cmsContent->save($con);
                     }
-                    $this->cmsContentsScheduledForDeletion = null;
+                }
+            } elseif ($this->collCmsContents) {
+                foreach ($this->collCmsContents as $cmsContent) {
+                    if ($cmsContent->isModified()) {
+                        $cmsContent->save($con);
+                    }
                 }
             }
 
-            if ($this->collCmsContents !== null) {
-                foreach ($this->collCmsContents as $referrerFK) {
+            if ($this->cmsContentHasTypessScheduledForDeletion !== null) {
+                if (!$this->cmsContentHasTypessScheduledForDeletion->isEmpty()) {
+                    CmsContentHasTypesQuery::create()
+                        ->filterByPrimaryKeys($this->cmsContentHasTypessScheduledForDeletion->getPrimaryKeys(false))
+                        ->delete($con);
+                    $this->cmsContentHasTypessScheduledForDeletion = null;
+                }
+            }
+
+            if ($this->collCmsContentHasTypess !== null) {
+                foreach ($this->collCmsContentHasTypess as $referrerFK) {
                     if (!$referrerFK->isDeleted() && ($referrerFK->isNew() || $referrerFK->isModified())) {
                         $affectedRows += $referrerFK->save($con);
                     }
@@ -676,33 +609,27 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         $modifiedColumns = array();
         $index = 0;
 
-        $this->modifiedColumns[] = CmsCategoryPeer::ID;
+        $this->modifiedColumns[] = CmsTypePeer::ID;
         if (null !== $this->id) {
-            throw new PropelException('Cannot insert a value for auto-increment primary key (' . CmsCategoryPeer::ID . ')');
+            throw new PropelException('Cannot insert a value for auto-increment primary key (' . CmsTypePeer::ID . ')');
         }
 
          // check the columns in natural order for more readable SQL queries
-        if ($this->isColumnModified(CmsCategoryPeer::ID)) {
+        if ($this->isColumnModified(CmsTypePeer::ID)) {
             $modifiedColumns[':p' . $index++]  = '`id`';
         }
-        if ($this->isColumnModified(CmsCategoryPeer::TITLE)) {
+        if ($this->isColumnModified(CmsTypePeer::TITLE)) {
             $modifiedColumns[':p' . $index++]  = '`title`';
         }
-        if ($this->isColumnModified(CmsCategoryPeer::ONLINE)) {
-            $modifiedColumns[':p' . $index++]  = '`online`';
-        }
-        if ($this->isColumnModified(CmsCategoryPeer::SORTABLE_RANK)) {
-            $modifiedColumns[':p' . $index++]  = '`sortable_rank`';
-        }
-        if ($this->isColumnModified(CmsCategoryPeer::CREATED_AT)) {
+        if ($this->isColumnModified(CmsTypePeer::CREATED_AT)) {
             $modifiedColumns[':p' . $index++]  = '`created_at`';
         }
-        if ($this->isColumnModified(CmsCategoryPeer::UPDATED_AT)) {
+        if ($this->isColumnModified(CmsTypePeer::UPDATED_AT)) {
             $modifiedColumns[':p' . $index++]  = '`updated_at`';
         }
 
         $sql = sprintf(
-            'INSERT INTO `cms_category` (%s) VALUES (%s)',
+            'INSERT INTO `cms_type` (%s) VALUES (%s)',
             implode(', ', $modifiedColumns),
             implode(', ', array_keys($modifiedColumns))
         );
@@ -716,12 +643,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
                         break;
                     case '`title`':
                         $stmt->bindValue($identifier, $this->title, PDO::PARAM_STR);
-                        break;
-                    case '`online`':
-                        $stmt->bindValue($identifier, (int) $this->online, PDO::PARAM_INT);
-                        break;
-                    case '`sortable_rank`':
-                        $stmt->bindValue($identifier, $this->sortable_rank, PDO::PARAM_INT);
                         break;
                     case '`created_at`':
                         $stmt->bindValue($identifier, $this->created_at, PDO::PARAM_STR);
@@ -773,7 +694,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function getByName($name, $type = BasePeer::TYPE_PHPNAME)
     {
-        $pos = CmsCategoryPeer::translateFieldName($name, $type, BasePeer::TYPE_NUM);
+        $pos = CmsTypePeer::translateFieldName($name, $type, BasePeer::TYPE_NUM);
         $field = $this->getByPosition($pos);
 
         return $field;
@@ -796,15 +717,9 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
                 return $this->getTitle();
                 break;
             case 2:
-                return $this->getOnline();
-                break;
-            case 3:
-                return $this->getSortableRank();
-                break;
-            case 4:
                 return $this->getCreatedAt();
                 break;
-            case 5:
+            case 3:
                 return $this->getUpdatedAt();
                 break;
             default:
@@ -830,18 +745,16 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function toArray($keyType = BasePeer::TYPE_PHPNAME, $includeLazyLoadColumns = true, $alreadyDumpedObjects = array(), $includeForeignObjects = false)
     {
-        if (isset($alreadyDumpedObjects['CmsCategory'][$this->getPrimaryKey()])) {
+        if (isset($alreadyDumpedObjects['CmsType'][$this->getPrimaryKey()])) {
             return '*RECURSION*';
         }
-        $alreadyDumpedObjects['CmsCategory'][$this->getPrimaryKey()] = true;
-        $keys = CmsCategoryPeer::getFieldNames($keyType);
+        $alreadyDumpedObjects['CmsType'][$this->getPrimaryKey()] = true;
+        $keys = CmsTypePeer::getFieldNames($keyType);
         $result = array(
             $keys[0] => $this->getId(),
             $keys[1] => $this->getTitle(),
-            $keys[2] => $this->getOnline(),
-            $keys[3] => $this->getSortableRank(),
-            $keys[4] => $this->getCreatedAt(),
-            $keys[5] => $this->getUpdatedAt(),
+            $keys[2] => $this->getCreatedAt(),
+            $keys[3] => $this->getUpdatedAt(),
         );
         $virtualColumns = $this->virtualColumns;
         foreach ($virtualColumns as $key => $virtualColumn) {
@@ -849,8 +762,8 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         }
 
         if ($includeForeignObjects) {
-            if (null !== $this->collCmsContents) {
-                $result['CmsContents'] = $this->collCmsContents->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
+            if (null !== $this->collCmsContentHasTypess) {
+                $result['CmsContentHasTypess'] = $this->collCmsContentHasTypess->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
             }
         }
 
@@ -870,7 +783,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function setByName($name, $value, $type = BasePeer::TYPE_PHPNAME)
     {
-        $pos = CmsCategoryPeer::translateFieldName($name, $type, BasePeer::TYPE_NUM);
+        $pos = CmsTypePeer::translateFieldName($name, $type, BasePeer::TYPE_NUM);
 
         $this->setByPosition($pos, $value);
     }
@@ -893,15 +806,9 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
                 $this->setTitle($value);
                 break;
             case 2:
-                $this->setOnline($value);
-                break;
-            case 3:
-                $this->setSortableRank($value);
-                break;
-            case 4:
                 $this->setCreatedAt($value);
                 break;
-            case 5:
+            case 3:
                 $this->setUpdatedAt($value);
                 break;
         } // switch()
@@ -926,14 +833,12 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function fromArray($arr, $keyType = BasePeer::TYPE_PHPNAME)
     {
-        $keys = CmsCategoryPeer::getFieldNames($keyType);
+        $keys = CmsTypePeer::getFieldNames($keyType);
 
         if (array_key_exists($keys[0], $arr)) $this->setId($arr[$keys[0]]);
         if (array_key_exists($keys[1], $arr)) $this->setTitle($arr[$keys[1]]);
-        if (array_key_exists($keys[2], $arr)) $this->setOnline($arr[$keys[2]]);
-        if (array_key_exists($keys[3], $arr)) $this->setSortableRank($arr[$keys[3]]);
-        if (array_key_exists($keys[4], $arr)) $this->setCreatedAt($arr[$keys[4]]);
-        if (array_key_exists($keys[5], $arr)) $this->setUpdatedAt($arr[$keys[5]]);
+        if (array_key_exists($keys[2], $arr)) $this->setCreatedAt($arr[$keys[2]]);
+        if (array_key_exists($keys[3], $arr)) $this->setUpdatedAt($arr[$keys[3]]);
     }
 
     /**
@@ -943,14 +848,12 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function buildCriteria()
     {
-        $criteria = new Criteria(CmsCategoryPeer::DATABASE_NAME);
+        $criteria = new Criteria(CmsTypePeer::DATABASE_NAME);
 
-        if ($this->isColumnModified(CmsCategoryPeer::ID)) $criteria->add(CmsCategoryPeer::ID, $this->id);
-        if ($this->isColumnModified(CmsCategoryPeer::TITLE)) $criteria->add(CmsCategoryPeer::TITLE, $this->title);
-        if ($this->isColumnModified(CmsCategoryPeer::ONLINE)) $criteria->add(CmsCategoryPeer::ONLINE, $this->online);
-        if ($this->isColumnModified(CmsCategoryPeer::SORTABLE_RANK)) $criteria->add(CmsCategoryPeer::SORTABLE_RANK, $this->sortable_rank);
-        if ($this->isColumnModified(CmsCategoryPeer::CREATED_AT)) $criteria->add(CmsCategoryPeer::CREATED_AT, $this->created_at);
-        if ($this->isColumnModified(CmsCategoryPeer::UPDATED_AT)) $criteria->add(CmsCategoryPeer::UPDATED_AT, $this->updated_at);
+        if ($this->isColumnModified(CmsTypePeer::ID)) $criteria->add(CmsTypePeer::ID, $this->id);
+        if ($this->isColumnModified(CmsTypePeer::TITLE)) $criteria->add(CmsTypePeer::TITLE, $this->title);
+        if ($this->isColumnModified(CmsTypePeer::CREATED_AT)) $criteria->add(CmsTypePeer::CREATED_AT, $this->created_at);
+        if ($this->isColumnModified(CmsTypePeer::UPDATED_AT)) $criteria->add(CmsTypePeer::UPDATED_AT, $this->updated_at);
 
         return $criteria;
     }
@@ -965,8 +868,8 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function buildPkeyCriteria()
     {
-        $criteria = new Criteria(CmsCategoryPeer::DATABASE_NAME);
-        $criteria->add(CmsCategoryPeer::ID, $this->id);
+        $criteria = new Criteria(CmsTypePeer::DATABASE_NAME);
+        $criteria->add(CmsTypePeer::ID, $this->id);
 
         return $criteria;
     }
@@ -1007,7 +910,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * If desired, this method can also make copies of all associated (fkey referrers)
      * objects.
      *
-     * @param object $copyObj An object of CmsCategory (or compatible) type.
+     * @param object $copyObj An object of CmsType (or compatible) type.
      * @param boolean $deepCopy Whether to also copy all rows that refer (by fkey) to the current row.
      * @param boolean $makeNew Whether to reset autoincrement PKs and make the object new.
      * @throws PropelException
@@ -1015,8 +918,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     public function copyInto($copyObj, $deepCopy = false, $makeNew = true)
     {
         $copyObj->setTitle($this->getTitle());
-        $copyObj->setOnline($this->getOnline());
-        $copyObj->setSortableRank($this->getSortableRank());
         $copyObj->setCreatedAt($this->getCreatedAt());
         $copyObj->setUpdatedAt($this->getUpdatedAt());
 
@@ -1027,9 +928,9 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
             // store object hash to prevent cycle
             $this->startCopy = true;
 
-            foreach ($this->getCmsContents() as $relObj) {
+            foreach ($this->getCmsContentHasTypess() as $relObj) {
                 if ($relObj !== $this) {  // ensure that we don't try to copy a reference to ourselves
-                    $copyObj->addCmsContent($relObj->copy($deepCopy));
+                    $copyObj->addCmsContentHasTypes($relObj->copy($deepCopy));
                 }
             }
 
@@ -1052,7 +953,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * objects.
      *
      * @param boolean $deepCopy Whether to also copy all rows that refer (by fkey) to the current row.
-     * @return CmsCategory Clone of current object.
+     * @return CmsType Clone of current object.
      * @throws PropelException
      */
     public function copy($deepCopy = false)
@@ -1072,12 +973,12 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * same instance for all member of this class. The method could therefore
      * be static, but this would prevent one from overriding the behavior.
      *
-     * @return CmsCategoryPeer
+     * @return CmsTypePeer
      */
     public function getPeer()
     {
         if (self::$peer === null) {
-            self::$peer = new CmsCategoryPeer();
+            self::$peer = new CmsTypePeer();
         }
 
         return self::$peer;
@@ -1094,9 +995,259 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function initRelation($relationName)
     {
-        if ('CmsContent' == $relationName) {
-            $this->initCmsContents();
+        if ('CmsContentHasTypes' == $relationName) {
+            $this->initCmsContentHasTypess();
         }
+    }
+
+    /**
+     * Clears out the collCmsContentHasTypess collection
+     *
+     * This does not modify the database; however, it will remove any associated objects, causing
+     * them to be refetched by subsequent calls to accessor method.
+     *
+     * @return CmsType The current object (for fluent API support)
+     * @see        addCmsContentHasTypess()
+     */
+    public function clearCmsContentHasTypess()
+    {
+        $this->collCmsContentHasTypess = null; // important to set this to null since that means it is uninitialized
+        $this->collCmsContentHasTypessPartial = null;
+
+        return $this;
+    }
+
+    /**
+     * reset is the collCmsContentHasTypess collection loaded partially
+     *
+     * @return void
+     */
+    public function resetPartialCmsContentHasTypess($v = true)
+    {
+        $this->collCmsContentHasTypessPartial = $v;
+    }
+
+    /**
+     * Initializes the collCmsContentHasTypess collection.
+     *
+     * By default this just sets the collCmsContentHasTypess collection to an empty array (like clearcollCmsContentHasTypess());
+     * however, you may wish to override this method in your stub class to provide setting appropriate
+     * to your application -- for example, setting the initial array to the values stored in database.
+     *
+     * @param boolean $overrideExisting If set to true, the method call initializes
+     *                                        the collection even if it is not empty
+     *
+     * @return void
+     */
+    public function initCmsContentHasTypess($overrideExisting = true)
+    {
+        if (null !== $this->collCmsContentHasTypess && !$overrideExisting) {
+            return;
+        }
+        $this->collCmsContentHasTypess = new PropelObjectCollection();
+        $this->collCmsContentHasTypess->setModel('CmsContentHasTypes');
+    }
+
+    /**
+     * Gets an array of CmsContentHasTypes objects which contain a foreign key that references this object.
+     *
+     * If the $criteria is not null, it is used to always fetch the results from the database.
+     * Otherwise the results are fetched from the database the first time, then cached.
+     * Next time the same method is called without $criteria, the cached collection is returned.
+     * If this CmsType is new, it will return
+     * an empty collection or the current collection; the criteria is ignored on a new object.
+     *
+     * @param Criteria $criteria optional Criteria object to narrow the query
+     * @param PropelPDO $con optional connection object
+     * @return PropelObjectCollection|CmsContentHasTypes[] List of CmsContentHasTypes objects
+     * @throws PropelException
+     */
+    public function getCmsContentHasTypess($criteria = null, PropelPDO $con = null)
+    {
+        $partial = $this->collCmsContentHasTypessPartial && !$this->isNew();
+        if (null === $this->collCmsContentHasTypess || null !== $criteria  || $partial) {
+            if ($this->isNew() && null === $this->collCmsContentHasTypess) {
+                // return empty collection
+                $this->initCmsContentHasTypess();
+            } else {
+                $collCmsContentHasTypess = CmsContentHasTypesQuery::create(null, $criteria)
+                    ->filterByCmsType($this)
+                    ->find($con);
+                if (null !== $criteria) {
+                    if (false !== $this->collCmsContentHasTypessPartial && count($collCmsContentHasTypess)) {
+                      $this->initCmsContentHasTypess(false);
+
+                      foreach ($collCmsContentHasTypess as $obj) {
+                        if (false == $this->collCmsContentHasTypess->contains($obj)) {
+                          $this->collCmsContentHasTypess->append($obj);
+                        }
+                      }
+
+                      $this->collCmsContentHasTypessPartial = true;
+                    }
+
+                    $collCmsContentHasTypess->getInternalIterator()->rewind();
+
+                    return $collCmsContentHasTypess;
+                }
+
+                if ($partial && $this->collCmsContentHasTypess) {
+                    foreach ($this->collCmsContentHasTypess as $obj) {
+                        if ($obj->isNew()) {
+                            $collCmsContentHasTypess[] = $obj;
+                        }
+                    }
+                }
+
+                $this->collCmsContentHasTypess = $collCmsContentHasTypess;
+                $this->collCmsContentHasTypessPartial = false;
+            }
+        }
+
+        return $this->collCmsContentHasTypess;
+    }
+
+    /**
+     * Sets a collection of CmsContentHasTypes objects related by a one-to-many relationship
+     * to the current object.
+     * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+     * and new objects from the given Propel collection.
+     *
+     * @param PropelCollection $cmsContentHasTypess A Propel collection.
+     * @param PropelPDO $con Optional connection object
+     * @return CmsType The current object (for fluent API support)
+     */
+    public function setCmsContentHasTypess(PropelCollection $cmsContentHasTypess, PropelPDO $con = null)
+    {
+        $cmsContentHasTypessToDelete = $this->getCmsContentHasTypess(new Criteria(), $con)->diff($cmsContentHasTypess);
+
+
+        $this->cmsContentHasTypessScheduledForDeletion = $cmsContentHasTypessToDelete;
+
+        foreach ($cmsContentHasTypessToDelete as $cmsContentHasTypesRemoved) {
+            $cmsContentHasTypesRemoved->setCmsType(null);
+        }
+
+        $this->collCmsContentHasTypess = null;
+        foreach ($cmsContentHasTypess as $cmsContentHasTypes) {
+            $this->addCmsContentHasTypes($cmsContentHasTypes);
+        }
+
+        $this->collCmsContentHasTypess = $cmsContentHasTypess;
+        $this->collCmsContentHasTypessPartial = false;
+
+        return $this;
+    }
+
+    /**
+     * Returns the number of related CmsContentHasTypes objects.
+     *
+     * @param Criteria $criteria
+     * @param boolean $distinct
+     * @param PropelPDO $con
+     * @return int             Count of related CmsContentHasTypes objects.
+     * @throws PropelException
+     */
+    public function countCmsContentHasTypess(Criteria $criteria = null, $distinct = false, PropelPDO $con = null)
+    {
+        $partial = $this->collCmsContentHasTypessPartial && !$this->isNew();
+        if (null === $this->collCmsContentHasTypess || null !== $criteria || $partial) {
+            if ($this->isNew() && null === $this->collCmsContentHasTypess) {
+                return 0;
+            }
+
+            if ($partial && !$criteria) {
+                return count($this->getCmsContentHasTypess());
+            }
+            $query = CmsContentHasTypesQuery::create(null, $criteria);
+            if ($distinct) {
+                $query->distinct();
+            }
+
+            return $query
+                ->filterByCmsType($this)
+                ->count($con);
+        }
+
+        return count($this->collCmsContentHasTypess);
+    }
+
+    /**
+     * Method called to associate a CmsContentHasTypes object to this object
+     * through the CmsContentHasTypes foreign key attribute.
+     *
+     * @param    CmsContentHasTypes $l CmsContentHasTypes
+     * @return CmsType The current object (for fluent API support)
+     */
+    public function addCmsContentHasTypes(CmsContentHasTypes $l)
+    {
+        if ($this->collCmsContentHasTypess === null) {
+            $this->initCmsContentHasTypess();
+            $this->collCmsContentHasTypessPartial = true;
+        }
+
+        if (!in_array($l, $this->collCmsContentHasTypess->getArrayCopy(), true)) { // only add it if the **same** object is not already associated
+            $this->doAddCmsContentHasTypes($l);
+
+            if ($this->cmsContentHasTypessScheduledForDeletion and $this->cmsContentHasTypessScheduledForDeletion->contains($l)) {
+                $this->cmsContentHasTypessScheduledForDeletion->remove($this->cmsContentHasTypessScheduledForDeletion->search($l));
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param	CmsContentHasTypes $cmsContentHasTypes The cmsContentHasTypes object to add.
+     */
+    protected function doAddCmsContentHasTypes($cmsContentHasTypes)
+    {
+        $this->collCmsContentHasTypess[]= $cmsContentHasTypes;
+        $cmsContentHasTypes->setCmsType($this);
+    }
+
+    /**
+     * @param	CmsContentHasTypes $cmsContentHasTypes The cmsContentHasTypes object to remove.
+     * @return CmsType The current object (for fluent API support)
+     */
+    public function removeCmsContentHasTypes($cmsContentHasTypes)
+    {
+        if ($this->getCmsContentHasTypess()->contains($cmsContentHasTypes)) {
+            $this->collCmsContentHasTypess->remove($this->collCmsContentHasTypess->search($cmsContentHasTypes));
+            if (null === $this->cmsContentHasTypessScheduledForDeletion) {
+                $this->cmsContentHasTypessScheduledForDeletion = clone $this->collCmsContentHasTypess;
+                $this->cmsContentHasTypessScheduledForDeletion->clear();
+            }
+            $this->cmsContentHasTypessScheduledForDeletion[]= clone $cmsContentHasTypes;
+            $cmsContentHasTypes->setCmsType(null);
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * If this collection has already been initialized with
+     * an identical criteria, it returns the collection.
+     * Otherwise if this CmsType is new, it will return
+     * an empty collection; or if this CmsType has previously
+     * been saved, it will retrieve related CmsContentHasTypess from storage.
+     *
+     * This method is protected by default in order to keep the public
+     * api reasonable.  You can provide public methods for those you
+     * actually need in CmsType.
+     *
+     * @param Criteria $criteria optional Criteria object to narrow the query
+     * @param PropelPDO $con optional connection object
+     * @param string $join_behavior optional join type to use (defaults to Criteria::LEFT_JOIN)
+     * @return PropelObjectCollection|CmsContentHasTypes[] List of CmsContentHasTypes objects
+     */
+    public function getCmsContentHasTypessJoinCmsContent($criteria = null, $con = null, $join_behavior = Criteria::LEFT_JOIN)
+    {
+        $query = CmsContentHasTypesQuery::create(null, $criteria);
+        $query->joinWith('CmsContent', $join_behavior);
+
+        return $this->getCmsContentHasTypess($query, $con);
     }
 
     /**
@@ -1105,7 +1256,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      * This does not modify the database; however, it will remove any associated objects, causing
      * them to be refetched by subsequent calls to accessor method.
      *
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      * @see        addCmsContents()
      */
     public function clearCmsContents()
@@ -1117,89 +1268,49 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     }
 
     /**
-     * reset is the collCmsContents collection loaded partially
-     *
-     * @return void
-     */
-    public function resetPartialCmsContents($v = true)
-    {
-        $this->collCmsContentsPartial = $v;
-    }
-
-    /**
      * Initializes the collCmsContents collection.
      *
-     * By default this just sets the collCmsContents collection to an empty array (like clearcollCmsContents());
+     * By default this just sets the collCmsContents collection to an empty collection (like clearCmsContents());
      * however, you may wish to override this method in your stub class to provide setting appropriate
      * to your application -- for example, setting the initial array to the values stored in database.
      *
-     * @param boolean $overrideExisting If set to true, the method call initializes
-     *                                        the collection even if it is not empty
-     *
      * @return void
      */
-    public function initCmsContents($overrideExisting = true)
+    public function initCmsContents()
     {
-        if (null !== $this->collCmsContents && !$overrideExisting) {
-            return;
-        }
         $this->collCmsContents = new PropelObjectCollection();
         $this->collCmsContents->setModel('CmsContent');
     }
 
     /**
-     * Gets an array of CmsContent objects which contain a foreign key that references this object.
+     * Gets a collection of CmsContent objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
      *
      * If the $criteria is not null, it is used to always fetch the results from the database.
      * Otherwise the results are fetched from the database the first time, then cached.
      * Next time the same method is called without $criteria, the cached collection is returned.
-     * If this CmsCategory is new, it will return
+     * If this CmsType is new, it will return
      * an empty collection or the current collection; the criteria is ignored on a new object.
      *
-     * @param Criteria $criteria optional Criteria object to narrow the query
-     * @param PropelPDO $con optional connection object
+     * @param Criteria $criteria Optional query object to filter the query
+     * @param PropelPDO $con Optional connection object
+     *
      * @return PropelObjectCollection|CmsContent[] List of CmsContent objects
-     * @throws PropelException
      */
     public function getCmsContents($criteria = null, PropelPDO $con = null)
     {
-        $partial = $this->collCmsContentsPartial && !$this->isNew();
-        if (null === $this->collCmsContents || null !== $criteria  || $partial) {
+        if (null === $this->collCmsContents || null !== $criteria) {
             if ($this->isNew() && null === $this->collCmsContents) {
                 // return empty collection
                 $this->initCmsContents();
             } else {
                 $collCmsContents = CmsContentQuery::create(null, $criteria)
-                    ->filterByCmsCategory($this)
+                    ->filterByCmsType($this)
                     ->find($con);
                 if (null !== $criteria) {
-                    if (false !== $this->collCmsContentsPartial && count($collCmsContents)) {
-                      $this->initCmsContents(false);
-
-                      foreach ($collCmsContents as $obj) {
-                        if (false == $this->collCmsContents->contains($obj)) {
-                          $this->collCmsContents->append($obj);
-                        }
-                      }
-
-                      $this->collCmsContentsPartial = true;
-                    }
-
-                    $collCmsContents->getInternalIterator()->rewind();
-
                     return $collCmsContents;
                 }
-
-                if ($partial && $this->collCmsContents) {
-                    foreach ($this->collCmsContents as $obj) {
-                        if ($obj->isNew()) {
-                            $collCmsContents[] = $obj;
-                        }
-                    }
-                }
-
                 $this->collCmsContents = $collCmsContents;
-                $this->collCmsContentsPartial = false;
             }
         }
 
@@ -1207,89 +1318,82 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     }
 
     /**
-     * Sets a collection of CmsContent objects related by a one-to-many relationship
-     * to the current object.
+     * Sets a collection of CmsContent objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
      * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
      * and new objects from the given Propel collection.
      *
      * @param PropelCollection $cmsContents A Propel collection.
      * @param PropelPDO $con Optional connection object
-     * @return CmsCategory The current object (for fluent API support)
+     * @return CmsType The current object (for fluent API support)
      */
     public function setCmsContents(PropelCollection $cmsContents, PropelPDO $con = null)
     {
-        $cmsContentsToDelete = $this->getCmsContents(new Criteria(), $con)->diff($cmsContents);
+        $this->clearCmsContents();
+        $currentCmsContents = $this->getCmsContents(null, $con);
 
+        $this->cmsContentsScheduledForDeletion = $currentCmsContents->diff($cmsContents);
 
-        $this->cmsContentsScheduledForDeletion = $cmsContentsToDelete;
-
-        foreach ($cmsContentsToDelete as $cmsContentRemoved) {
-            $cmsContentRemoved->setCmsCategory(null);
-        }
-
-        $this->collCmsContents = null;
         foreach ($cmsContents as $cmsContent) {
-            $this->addCmsContent($cmsContent);
+            if (!$currentCmsContents->contains($cmsContent)) {
+                $this->doAddCmsContent($cmsContent);
+            }
         }
 
         $this->collCmsContents = $cmsContents;
-        $this->collCmsContentsPartial = false;
 
         return $this;
     }
 
     /**
-     * Returns the number of related CmsContent objects.
+     * Gets the number of CmsContent objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
      *
-     * @param Criteria $criteria
-     * @param boolean $distinct
-     * @param PropelPDO $con
-     * @return int             Count of related CmsContent objects.
-     * @throws PropelException
+     * @param Criteria $criteria Optional query object to filter the query
+     * @param boolean $distinct Set to true to force count distinct
+     * @param PropelPDO $con Optional connection object
+     *
+     * @return int the number of related CmsContent objects
      */
-    public function countCmsContents(Criteria $criteria = null, $distinct = false, PropelPDO $con = null)
+    public function countCmsContents($criteria = null, $distinct = false, PropelPDO $con = null)
     {
-        $partial = $this->collCmsContentsPartial && !$this->isNew();
-        if (null === $this->collCmsContents || null !== $criteria || $partial) {
+        if (null === $this->collCmsContents || null !== $criteria) {
             if ($this->isNew() && null === $this->collCmsContents) {
                 return 0;
-            }
+            } else {
+                $query = CmsContentQuery::create(null, $criteria);
+                if ($distinct) {
+                    $query->distinct();
+                }
 
-            if ($partial && !$criteria) {
-                return count($this->getCmsContents());
+                return $query
+                    ->filterByCmsType($this)
+                    ->count($con);
             }
-            $query = CmsContentQuery::create(null, $criteria);
-            if ($distinct) {
-                $query->distinct();
-            }
-
-            return $query
-                ->filterByCmsCategory($this)
-                ->count($con);
+        } else {
+            return count($this->collCmsContents);
         }
-
-        return count($this->collCmsContents);
     }
 
     /**
-     * Method called to associate a CmsContent object to this object
-     * through the CmsContent foreign key attribute.
+     * Associate a CmsContent object to this object
+     * through the cms_content_has_types cross reference table.
      *
-     * @param    CmsContent $l CmsContent
-     * @return CmsCategory The current object (for fluent API support)
+     * @param  CmsContent $cmsContent The CmsContentHasTypes object to relate
+     * @return CmsType The current object (for fluent API support)
      */
-    public function addCmsContent(CmsContent $l)
+    public function addCmsContent(CmsContent $cmsContent)
     {
         if ($this->collCmsContents === null) {
             $this->initCmsContents();
-            $this->collCmsContentsPartial = true;
         }
 
-        if (!in_array($l, $this->collCmsContents->getArrayCopy(), true)) { // only add it if the **same** object is not already associated
-            $this->doAddCmsContent($l);
+        if (!$this->collCmsContents->contains($cmsContent)) { // only add it if the **same** object is not already associated
+            $this->doAddCmsContent($cmsContent);
+            $this->collCmsContents[] = $cmsContent;
 
-            if ($this->cmsContentsScheduledForDeletion and $this->cmsContentsScheduledForDeletion->contains($l)) {
-                $this->cmsContentsScheduledForDeletion->remove($this->cmsContentsScheduledForDeletion->search($l));
+            if ($this->cmsContentsScheduledForDeletion and $this->cmsContentsScheduledForDeletion->contains($cmsContent)) {
+                $this->cmsContentsScheduledForDeletion->remove($this->cmsContentsScheduledForDeletion->search($cmsContent));
             }
         }
 
@@ -1299,17 +1403,27 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     /**
      * @param	CmsContent $cmsContent The cmsContent object to add.
      */
-    protected function doAddCmsContent($cmsContent)
+    protected function doAddCmsContent(CmsContent $cmsContent)
     {
-        $this->collCmsContents[]= $cmsContent;
-        $cmsContent->setCmsCategory($this);
+        // set the back reference to this object directly as using provided method either results
+        // in endless loop or in multiple relations
+        if (!$cmsContent->getCmsTypes()->contains($this)) { $cmsContentHasTypes = new CmsContentHasTypes();
+            $cmsContentHasTypes->setCmsContent($cmsContent);
+            $this->addCmsContentHasTypes($cmsContentHasTypes);
+
+            $foreignCollection = $cmsContent->getCmsTypes();
+            $foreignCollection[] = $this;
+        }
     }
 
     /**
-     * @param	CmsContent $cmsContent The cmsContent object to remove.
-     * @return CmsCategory The current object (for fluent API support)
+     * Remove a CmsContent object to this object
+     * through the cms_content_has_types cross reference table.
+     *
+     * @param CmsContent $cmsContent The CmsContentHasTypes object to relate
+     * @return CmsType The current object (for fluent API support)
      */
-    public function removeCmsContent($cmsContent)
+    public function removeCmsContent(CmsContent $cmsContent)
     {
         if ($this->getCmsContents()->contains($cmsContent)) {
             $this->collCmsContents->remove($this->collCmsContents->search($cmsContent));
@@ -1318,7 +1432,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
                 $this->cmsContentsScheduledForDeletion->clear();
             }
             $this->cmsContentsScheduledForDeletion[]= $cmsContent;
-            $cmsContent->setCmsCategory(null);
         }
 
         return $this;
@@ -1331,8 +1444,6 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     {
         $this->id = null;
         $this->title = null;
-        $this->online = null;
-        $this->sortable_rank = null;
         $this->created_at = null;
         $this->updated_at = null;
         $this->alreadyInSave = false;
@@ -1357,6 +1468,11 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
     {
         if ($deep && !$this->alreadyInClearAllReferencesDeep) {
             $this->alreadyInClearAllReferencesDeep = true;
+            if ($this->collCmsContentHasTypess) {
+                foreach ($this->collCmsContentHasTypess as $o) {
+                    $o->clearAllReferences($deep);
+                }
+            }
             if ($this->collCmsContents) {
                 foreach ($this->collCmsContents as $o) {
                     $o->clearAllReferences($deep);
@@ -1366,6 +1482,10 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
             $this->alreadyInClearAllReferencesDeep = false;
         } // if ($deep)
 
+        if ($this->collCmsContentHasTypess instanceof PropelCollection) {
+            $this->collCmsContentHasTypess->clearIterator();
+        }
+        $this->collCmsContentHasTypess = null;
         if ($this->collCmsContents instanceof PropelCollection) {
             $this->collCmsContents->clearIterator();
         }
@@ -1379,7 +1499,7 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
      */
     public function __toString()
     {
-        return (string) $this->exportTo(CmsCategoryPeer::DEFAULT_STRING_FORMAT);
+        return (string) $this->exportTo(CmsTypePeer::DEFAULT_STRING_FORMAT);
     }
 
     /**
@@ -1392,367 +1512,16 @@ abstract class BaseCmsCategory extends BaseObject implements Persistent
         return $this->alreadyInSave;
     }
 
-    // sortable behavior
-
-    /**
-     * Wrap the getter for rank value
-     *
-     * @return    int
-     */
-    public function getRank()
-    {
-        return $this->sortable_rank;
-    }
-
-    /**
-     * Wrap the setter for rank value
-     *
-     * @param     int
-     * @return    CmsCategory
-     */
-    public function setRank($v)
-    {
-        return $this->setSortableRank($v);
-    }
-
-    /**
-     * Check if the object is first in the list, i.e. if it has 1 for rank
-     *
-     * @return    boolean
-     */
-    public function isFirst()
-    {
-        return $this->getSortableRank() == 1;
-    }
-
-    /**
-     * Check if the object is last in the list, i.e. if its rank is the highest rank
-     *
-     * @param     PropelPDO  $con      optional connection
-     *
-     * @return    boolean
-     */
-    public function isLast(PropelPDO $con = null)
-    {
-        return $this->getSortableRank() == CmsCategoryQuery::create()->getMaxRankArray($con);
-    }
-
-    /**
-     * Get the next item in the list, i.e. the one for which rank is immediately higher
-     *
-     * @param     PropelPDO  $con      optional connection
-     *
-     * @return    CmsCategory
-     */
-    public function getNext(PropelPDO $con = null)
-    {
-
-        $query = CmsCategoryQuery::create();
-
-        $query->filterByRank($this->getSortableRank() + 1);
-
-
-        return $query->findOne($con);
-    }
-
-    /**
-     * Get the previous item in the list, i.e. the one for which rank is immediately lower
-     *
-     * @param     PropelPDO  $con      optional connection
-     *
-     * @return    CmsCategory
-     */
-    public function getPrevious(PropelPDO $con = null)
-    {
-
-        $query = CmsCategoryQuery::create();
-
-        $query->filterByRank($this->getSortableRank() - 1);
-
-
-        return $query->findOne($con);
-    }
-
-    /**
-     * Insert at specified rank
-     * The modifications are not persisted until the object is saved.
-     *
-     * @param     integer    $rank rank value
-     * @param     PropelPDO  $con      optional connection
-     *
-     * @return    CmsCategory the current object
-     *
-     * @throws    PropelException
-     */
-    public function insertAtRank($rank, PropelPDO $con = null)
-    {
-        $maxRank = CmsCategoryQuery::create()->getMaxRankArray($con);
-        if ($rank < 1 || $rank > $maxRank + 1) {
-            throw new PropelException('Invalid rank ' . $rank);
-        }
-        // move the object in the list, at the given rank
-        $this->setSortableRank($rank);
-        if ($rank != $maxRank + 1) {
-            // Keep the list modification query for the save() transaction
-            $this->sortableQueries []= array(
-                'callable'  => array(self::PEER, 'shiftRank'),
-                'arguments' => array(1, $rank, null, )
-            );
-        }
-
-        return $this;
-    }
-
-    /**
-     * Insert in the last rank
-     * The modifications are not persisted until the object is saved.
-     *
-     * @param PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     *
-     * @throws    PropelException
-     */
-    public function insertAtBottom(PropelPDO $con = null)
-    {
-        $this->setSortableRank(CmsCategoryQuery::create()->getMaxRankArray($con) + 1);
-
-        return $this;
-    }
-
-    /**
-     * Insert in the first rank
-     * The modifications are not persisted until the object is saved.
-     *
-     * @return    CmsCategory the current object
-     */
-    public function insertAtTop()
-    {
-        return $this->insertAtRank(1);
-    }
-
-    /**
-     * Move the object to a new rank, and shifts the rank
-     * Of the objects inbetween the old and new rank accordingly
-     *
-     * @param     integer   $newRank rank value
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     *
-     * @throws    PropelException
-     */
-    public function moveToRank($newRank, PropelPDO $con = null)
-    {
-        if ($this->isNew()) {
-            throw new PropelException('New objects cannot be moved. Please use insertAtRank() instead');
-        }
-        if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME);
-        }
-        if ($newRank < 1 || $newRank > CmsCategoryQuery::create()->getMaxRankArray($con)) {
-            throw new PropelException('Invalid rank ' . $newRank);
-        }
-
-        $oldRank = $this->getSortableRank();
-        if ($oldRank == $newRank) {
-            return $this;
-        }
-
-        $con->beginTransaction();
-        try {
-            // shift the objects between the old and the new rank
-            $delta = ($oldRank < $newRank) ? -1 : 1;
-            CmsCategoryPeer::shiftRank($delta, min($oldRank, $newRank), max($oldRank, $newRank), $con);
-
-            // move the object to its new rank
-            $this->setSortableRank($newRank);
-            $this->save($con);
-
-            $con->commit();
-
-            return $this;
-        } catch (Exception $e) {
-            $con->rollback();
-            throw $e;
-        }
-    }
-
-    /**
-     * Exchange the rank of the object with the one passed as argument, and saves both objects
-     *
-     * @param     CmsCategory $object
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     *
-     * @throws Exception if the database cannot execute the two updates
-     */
-    public function swapWith($object, PropelPDO $con = null)
-    {
-        if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME);
-        }
-        $con->beginTransaction();
-        try {
-            $oldRank = $this->getSortableRank();
-            $newRank = $object->getSortableRank();
-            $this->setSortableRank($newRank);
-            $this->save($con);
-            $object->setSortableRank($oldRank);
-            $object->save($con);
-            $con->commit();
-
-            return $this;
-        } catch (Exception $e) {
-            $con->rollback();
-            throw $e;
-        }
-    }
-
-    /**
-     * Move the object higher in the list, i.e. exchanges its rank with the one of the previous object
-     *
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     */
-    public function moveUp(PropelPDO $con = null)
-    {
-        if ($this->isFirst()) {
-            return $this;
-        }
-        if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME);
-        }
-        $con->beginTransaction();
-        try {
-            $prev = $this->getPrevious($con);
-            $this->swapWith($prev, $con);
-            $con->commit();
-
-            return $this;
-        } catch (Exception $e) {
-            $con->rollback();
-            throw $e;
-        }
-    }
-
-    /**
-     * Move the object higher in the list, i.e. exchanges its rank with the one of the next object
-     *
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     */
-    public function moveDown(PropelPDO $con = null)
-    {
-        if ($this->isLast($con)) {
-            return $this;
-        }
-        if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME);
-        }
-        $con->beginTransaction();
-        try {
-            $next = $this->getNext($con);
-            $this->swapWith($next, $con);
-            $con->commit();
-
-            return $this;
-        } catch (Exception $e) {
-            $con->rollback();
-            throw $e;
-        }
-    }
-
-    /**
-     * Move the object to the top of the list
-     *
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     */
-    public function moveToTop(PropelPDO $con = null)
-    {
-        if ($this->isFirst()) {
-            return $this;
-        }
-
-        return $this->moveToRank(1, $con);
-    }
-
-    /**
-     * Move the object to the bottom of the list
-     *
-     * @param     PropelPDO $con optional connection
-     *
-     * @return integer the old object's rank
-     */
-    public function moveToBottom(PropelPDO $con = null)
-    {
-        if ($this->isLast($con)) {
-            return false;
-        }
-        if ($con === null) {
-            $con = Propel::getConnection(CmsCategoryPeer::DATABASE_NAME);
-        }
-        $con->beginTransaction();
-        try {
-            $bottom = CmsCategoryQuery::create()->getMaxRankArray($con);
-            $res = $this->moveToRank($bottom, $con);
-            $con->commit();
-
-            return $res;
-        } catch (Exception $e) {
-            $con->rollback();
-            throw $e;
-        }
-    }
-
-    /**
-     * Removes the current object from the list.
-     * The modifications are not persisted until the object is saved.
-     *
-     * @param     PropelPDO $con optional connection
-     *
-     * @return    CmsCategory the current object
-     */
-    public function removeFromList(PropelPDO $con = null)
-    {
-        // Keep the list modification query for the save() transaction
-        $this->sortableQueries []= array(
-            'callable'  => array(self::PEER, 'shiftRank'),
-            'arguments' => array(-1, $this->getSortableRank() + 1, null)
-        );
-        // remove the object from the list
-        $this->setSortableRank(null);
-
-        return $this;
-    }
-
-    /**
-     * Execute queries that were saved to be run inside the save transaction
-     */
-    protected function processSortableQueries($con)
-    {
-        foreach ($this->sortableQueries as $query) {
-            $query['arguments'][]= $con;
-            call_user_func_array($query['callable'], $query['arguments']);
-        }
-        $this->sortableQueries = array();
-    }
-
     // timestampable behavior
 
     /**
      * Mark the current object so that the update date doesn't get updated during next save
      *
-     * @return     CmsCategory The current object (for fluent API support)
+     * @return     CmsType The current object (for fluent API support)
      */
     public function keepUpdateDateUnchanged()
     {
-        $this->modifiedColumns[] = CmsCategoryPeer::UPDATED_AT;
+        $this->modifiedColumns[] = CmsTypePeer::UPDATED_AT;
 
         return $this;
     }

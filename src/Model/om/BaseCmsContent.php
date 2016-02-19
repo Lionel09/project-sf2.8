@@ -10,14 +10,20 @@ use \Exception;
 use \PDO;
 use \Persistent;
 use \Propel;
+use \PropelCollection;
 use \PropelDateTime;
 use \PropelException;
+use \PropelObjectCollection;
 use \PropelPDO;
 use Model\CmsCategory;
 use Model\CmsCategoryQuery;
 use Model\CmsContent;
+use Model\CmsContentHasTypes;
+use Model\CmsContentHasTypesQuery;
 use Model\CmsContentPeer;
 use Model\CmsContentQuery;
+use Model\CmsType;
+use Model\CmsTypeQuery;
 
 abstract class BaseCmsContent extends BaseObject implements Persistent
 {
@@ -94,6 +100,17 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
     protected $aCmsCategory;
 
     /**
+     * @var        PropelObjectCollection|CmsContentHasTypes[] Collection to store aggregation of CmsContentHasTypes objects.
+     */
+    protected $collCmsContentHasTypess;
+    protected $collCmsContentHasTypessPartial;
+
+    /**
+     * @var        PropelObjectCollection|CmsType[] Collection to store aggregation of CmsType objects.
+     */
+    protected $collCmsTypes;
+
+    /**
      * Flag to prevent endless save loop, if this object is referenced
      * by another object which falls in this transaction.
      * @var        boolean
@@ -112,6 +129,18 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
      * @var        boolean
      */
     protected $alreadyInClearAllReferencesDeep = false;
+
+    /**
+     * An array of objects scheduled for deletion.
+     * @var		PropelObjectCollection
+     */
+    protected $cmsTypesScheduledForDeletion = null;
+
+    /**
+     * An array of objects scheduled for deletion.
+     * @var		PropelObjectCollection
+     */
+    protected $cmsContentHasTypessScheduledForDeletion = null;
 
     /**
      * Get the [id] column value.
@@ -188,7 +217,7 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
      * @return mixed Formatted date/time value as string or DateTime object (if format is null), null if column is null, and 0 if column value is 0000-00-00 00:00:00
      * @throws PropelException - if unable to parse/validate the date/time value.
      */
-    public function getCreatedAt($format = 'Y-m-d H:i:s')
+    public function getCreatedAt($format = null)
     {
         if ($this->created_at === null) {
             return null;
@@ -228,7 +257,7 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
      * @return mixed Formatted date/time value as string or DateTime object (if format is null), null if column is null, and 0 if column value is 0000-00-00 00:00:00
      * @throws PropelException - if unable to parse/validate the date/time value.
      */
-    public function getUpdatedAt($format = 'Y-m-d H:i:s')
+    public function getUpdatedAt($format = null)
     {
         if ($this->updated_at === null) {
             return null;
@@ -558,6 +587,9 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
         if ($deep) {  // also de-associate any related objects?
 
             $this->aCmsCategory = null;
+            $this->collCmsContentHasTypess = null;
+
+            $this->collCmsTypes = null;
         } // if (deep)
     }
 
@@ -703,6 +735,49 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
                 }
                 $affectedRows += 1;
                 $this->resetModified();
+            }
+
+            if ($this->cmsTypesScheduledForDeletion !== null) {
+                if (!$this->cmsTypesScheduledForDeletion->isEmpty()) {
+                    $pks = array();
+                    $pk = $this->getPrimaryKey();
+                    foreach ($this->cmsTypesScheduledForDeletion->getPrimaryKeys(false) as $remotePk) {
+                        $pks[] = array($pk, $remotePk);
+                    }
+                    CmsContentHasTypesQuery::create()
+                        ->filterByPrimaryKeys($pks)
+                        ->delete($con);
+                    $this->cmsTypesScheduledForDeletion = null;
+                }
+
+                foreach ($this->getCmsTypes() as $cmsType) {
+                    if ($cmsType->isModified()) {
+                        $cmsType->save($con);
+                    }
+                }
+            } elseif ($this->collCmsTypes) {
+                foreach ($this->collCmsTypes as $cmsType) {
+                    if ($cmsType->isModified()) {
+                        $cmsType->save($con);
+                    }
+                }
+            }
+
+            if ($this->cmsContentHasTypessScheduledForDeletion !== null) {
+                if (!$this->cmsContentHasTypessScheduledForDeletion->isEmpty()) {
+                    CmsContentHasTypesQuery::create()
+                        ->filterByPrimaryKeys($this->cmsContentHasTypessScheduledForDeletion->getPrimaryKeys(false))
+                        ->delete($con);
+                    $this->cmsContentHasTypessScheduledForDeletion = null;
+                }
+            }
+
+            if ($this->collCmsContentHasTypess !== null) {
+                foreach ($this->collCmsContentHasTypess as $referrerFK) {
+                    if (!$referrerFK->isDeleted() && ($referrerFK->isNew() || $referrerFK->isModified())) {
+                        $affectedRows += $referrerFK->save($con);
+                    }
+                }
             }
 
             $this->alreadyInSave = false;
@@ -921,6 +996,9 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
             if (null !== $this->aCmsCategory) {
                 $result['CmsCategory'] = $this->aCmsCategory->toArray($keyType, $includeLazyLoadColumns,  $alreadyDumpedObjects, true);
             }
+            if (null !== $this->collCmsContentHasTypess) {
+                $result['CmsContentHasTypess'] = $this->collCmsContentHasTypess->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
+            }
         }
 
         return $result;
@@ -1108,6 +1186,12 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
             // store object hash to prevent cycle
             $this->startCopy = true;
 
+            foreach ($this->getCmsContentHasTypess() as $relObj) {
+                if ($relObj !== $this) {  // ensure that we don't try to copy a reference to ourselves
+                    $copyObj->addCmsContentHasTypes($relObj->copy($deepCopy));
+                }
+            }
+
             //unflag object copy
             $this->startCopy = false;
         } // if ($deepCopy)
@@ -1210,6 +1294,459 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
         return $this->aCmsCategory;
     }
 
+
+    /**
+     * Initializes a collection based on the name of a relation.
+     * Avoids crafting an 'init[$relationName]s' method name
+     * that wouldn't work when StandardEnglishPluralizer is used.
+     *
+     * @param string $relationName The name of the relation to initialize
+     * @return void
+     */
+    public function initRelation($relationName)
+    {
+        if ('CmsContentHasTypes' == $relationName) {
+            $this->initCmsContentHasTypess();
+        }
+    }
+
+    /**
+     * Clears out the collCmsContentHasTypess collection
+     *
+     * This does not modify the database; however, it will remove any associated objects, causing
+     * them to be refetched by subsequent calls to accessor method.
+     *
+     * @return CmsContent The current object (for fluent API support)
+     * @see        addCmsContentHasTypess()
+     */
+    public function clearCmsContentHasTypess()
+    {
+        $this->collCmsContentHasTypess = null; // important to set this to null since that means it is uninitialized
+        $this->collCmsContentHasTypessPartial = null;
+
+        return $this;
+    }
+
+    /**
+     * reset is the collCmsContentHasTypess collection loaded partially
+     *
+     * @return void
+     */
+    public function resetPartialCmsContentHasTypess($v = true)
+    {
+        $this->collCmsContentHasTypessPartial = $v;
+    }
+
+    /**
+     * Initializes the collCmsContentHasTypess collection.
+     *
+     * By default this just sets the collCmsContentHasTypess collection to an empty array (like clearcollCmsContentHasTypess());
+     * however, you may wish to override this method in your stub class to provide setting appropriate
+     * to your application -- for example, setting the initial array to the values stored in database.
+     *
+     * @param boolean $overrideExisting If set to true, the method call initializes
+     *                                        the collection even if it is not empty
+     *
+     * @return void
+     */
+    public function initCmsContentHasTypess($overrideExisting = true)
+    {
+        if (null !== $this->collCmsContentHasTypess && !$overrideExisting) {
+            return;
+        }
+        $this->collCmsContentHasTypess = new PropelObjectCollection();
+        $this->collCmsContentHasTypess->setModel('CmsContentHasTypes');
+    }
+
+    /**
+     * Gets an array of CmsContentHasTypes objects which contain a foreign key that references this object.
+     *
+     * If the $criteria is not null, it is used to always fetch the results from the database.
+     * Otherwise the results are fetched from the database the first time, then cached.
+     * Next time the same method is called without $criteria, the cached collection is returned.
+     * If this CmsContent is new, it will return
+     * an empty collection or the current collection; the criteria is ignored on a new object.
+     *
+     * @param Criteria $criteria optional Criteria object to narrow the query
+     * @param PropelPDO $con optional connection object
+     * @return PropelObjectCollection|CmsContentHasTypes[] List of CmsContentHasTypes objects
+     * @throws PropelException
+     */
+    public function getCmsContentHasTypess($criteria = null, PropelPDO $con = null)
+    {
+        $partial = $this->collCmsContentHasTypessPartial && !$this->isNew();
+        if (null === $this->collCmsContentHasTypess || null !== $criteria  || $partial) {
+            if ($this->isNew() && null === $this->collCmsContentHasTypess) {
+                // return empty collection
+                $this->initCmsContentHasTypess();
+            } else {
+                $collCmsContentHasTypess = CmsContentHasTypesQuery::create(null, $criteria)
+                    ->filterByCmsContent($this)
+                    ->find($con);
+                if (null !== $criteria) {
+                    if (false !== $this->collCmsContentHasTypessPartial && count($collCmsContentHasTypess)) {
+                      $this->initCmsContentHasTypess(false);
+
+                      foreach ($collCmsContentHasTypess as $obj) {
+                        if (false == $this->collCmsContentHasTypess->contains($obj)) {
+                          $this->collCmsContentHasTypess->append($obj);
+                        }
+                      }
+
+                      $this->collCmsContentHasTypessPartial = true;
+                    }
+
+                    $collCmsContentHasTypess->getInternalIterator()->rewind();
+
+                    return $collCmsContentHasTypess;
+                }
+
+                if ($partial && $this->collCmsContentHasTypess) {
+                    foreach ($this->collCmsContentHasTypess as $obj) {
+                        if ($obj->isNew()) {
+                            $collCmsContentHasTypess[] = $obj;
+                        }
+                    }
+                }
+
+                $this->collCmsContentHasTypess = $collCmsContentHasTypess;
+                $this->collCmsContentHasTypessPartial = false;
+            }
+        }
+
+        return $this->collCmsContentHasTypess;
+    }
+
+    /**
+     * Sets a collection of CmsContentHasTypes objects related by a one-to-many relationship
+     * to the current object.
+     * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+     * and new objects from the given Propel collection.
+     *
+     * @param PropelCollection $cmsContentHasTypess A Propel collection.
+     * @param PropelPDO $con Optional connection object
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function setCmsContentHasTypess(PropelCollection $cmsContentHasTypess, PropelPDO $con = null)
+    {
+        $cmsContentHasTypessToDelete = $this->getCmsContentHasTypess(new Criteria(), $con)->diff($cmsContentHasTypess);
+
+
+        $this->cmsContentHasTypessScheduledForDeletion = $cmsContentHasTypessToDelete;
+
+        foreach ($cmsContentHasTypessToDelete as $cmsContentHasTypesRemoved) {
+            $cmsContentHasTypesRemoved->setCmsContent(null);
+        }
+
+        $this->collCmsContentHasTypess = null;
+        foreach ($cmsContentHasTypess as $cmsContentHasTypes) {
+            $this->addCmsContentHasTypes($cmsContentHasTypes);
+        }
+
+        $this->collCmsContentHasTypess = $cmsContentHasTypess;
+        $this->collCmsContentHasTypessPartial = false;
+
+        return $this;
+    }
+
+    /**
+     * Returns the number of related CmsContentHasTypes objects.
+     *
+     * @param Criteria $criteria
+     * @param boolean $distinct
+     * @param PropelPDO $con
+     * @return int             Count of related CmsContentHasTypes objects.
+     * @throws PropelException
+     */
+    public function countCmsContentHasTypess(Criteria $criteria = null, $distinct = false, PropelPDO $con = null)
+    {
+        $partial = $this->collCmsContentHasTypessPartial && !$this->isNew();
+        if (null === $this->collCmsContentHasTypess || null !== $criteria || $partial) {
+            if ($this->isNew() && null === $this->collCmsContentHasTypess) {
+                return 0;
+            }
+
+            if ($partial && !$criteria) {
+                return count($this->getCmsContentHasTypess());
+            }
+            $query = CmsContentHasTypesQuery::create(null, $criteria);
+            if ($distinct) {
+                $query->distinct();
+            }
+
+            return $query
+                ->filterByCmsContent($this)
+                ->count($con);
+        }
+
+        return count($this->collCmsContentHasTypess);
+    }
+
+    /**
+     * Method called to associate a CmsContentHasTypes object to this object
+     * through the CmsContentHasTypes foreign key attribute.
+     *
+     * @param    CmsContentHasTypes $l CmsContentHasTypes
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function addCmsContentHasTypes(CmsContentHasTypes $l)
+    {
+        if ($this->collCmsContentHasTypess === null) {
+            $this->initCmsContentHasTypess();
+            $this->collCmsContentHasTypessPartial = true;
+        }
+
+        if (!in_array($l, $this->collCmsContentHasTypess->getArrayCopy(), true)) { // only add it if the **same** object is not already associated
+            $this->doAddCmsContentHasTypes($l);
+
+            if ($this->cmsContentHasTypessScheduledForDeletion and $this->cmsContentHasTypessScheduledForDeletion->contains($l)) {
+                $this->cmsContentHasTypessScheduledForDeletion->remove($this->cmsContentHasTypessScheduledForDeletion->search($l));
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param	CmsContentHasTypes $cmsContentHasTypes The cmsContentHasTypes object to add.
+     */
+    protected function doAddCmsContentHasTypes($cmsContentHasTypes)
+    {
+        $this->collCmsContentHasTypess[]= $cmsContentHasTypes;
+        $cmsContentHasTypes->setCmsContent($this);
+    }
+
+    /**
+     * @param	CmsContentHasTypes $cmsContentHasTypes The cmsContentHasTypes object to remove.
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function removeCmsContentHasTypes($cmsContentHasTypes)
+    {
+        if ($this->getCmsContentHasTypess()->contains($cmsContentHasTypes)) {
+            $this->collCmsContentHasTypess->remove($this->collCmsContentHasTypess->search($cmsContentHasTypes));
+            if (null === $this->cmsContentHasTypessScheduledForDeletion) {
+                $this->cmsContentHasTypessScheduledForDeletion = clone $this->collCmsContentHasTypess;
+                $this->cmsContentHasTypessScheduledForDeletion->clear();
+            }
+            $this->cmsContentHasTypessScheduledForDeletion[]= clone $cmsContentHasTypes;
+            $cmsContentHasTypes->setCmsContent(null);
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * If this collection has already been initialized with
+     * an identical criteria, it returns the collection.
+     * Otherwise if this CmsContent is new, it will return
+     * an empty collection; or if this CmsContent has previously
+     * been saved, it will retrieve related CmsContentHasTypess from storage.
+     *
+     * This method is protected by default in order to keep the public
+     * api reasonable.  You can provide public methods for those you
+     * actually need in CmsContent.
+     *
+     * @param Criteria $criteria optional Criteria object to narrow the query
+     * @param PropelPDO $con optional connection object
+     * @param string $join_behavior optional join type to use (defaults to Criteria::LEFT_JOIN)
+     * @return PropelObjectCollection|CmsContentHasTypes[] List of CmsContentHasTypes objects
+     */
+    public function getCmsContentHasTypessJoinCmsType($criteria = null, $con = null, $join_behavior = Criteria::LEFT_JOIN)
+    {
+        $query = CmsContentHasTypesQuery::create(null, $criteria);
+        $query->joinWith('CmsType', $join_behavior);
+
+        return $this->getCmsContentHasTypess($query, $con);
+    }
+
+    /**
+     * Clears out the collCmsTypes collection
+     *
+     * This does not modify the database; however, it will remove any associated objects, causing
+     * them to be refetched by subsequent calls to accessor method.
+     *
+     * @return CmsContent The current object (for fluent API support)
+     * @see        addCmsTypes()
+     */
+    public function clearCmsTypes()
+    {
+        $this->collCmsTypes = null; // important to set this to null since that means it is uninitialized
+        $this->collCmsTypesPartial = null;
+
+        return $this;
+    }
+
+    /**
+     * Initializes the collCmsTypes collection.
+     *
+     * By default this just sets the collCmsTypes collection to an empty collection (like clearCmsTypes());
+     * however, you may wish to override this method in your stub class to provide setting appropriate
+     * to your application -- for example, setting the initial array to the values stored in database.
+     *
+     * @return void
+     */
+    public function initCmsTypes()
+    {
+        $this->collCmsTypes = new PropelObjectCollection();
+        $this->collCmsTypes->setModel('CmsType');
+    }
+
+    /**
+     * Gets a collection of CmsType objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
+     *
+     * If the $criteria is not null, it is used to always fetch the results from the database.
+     * Otherwise the results are fetched from the database the first time, then cached.
+     * Next time the same method is called without $criteria, the cached collection is returned.
+     * If this CmsContent is new, it will return
+     * an empty collection or the current collection; the criteria is ignored on a new object.
+     *
+     * @param Criteria $criteria Optional query object to filter the query
+     * @param PropelPDO $con Optional connection object
+     *
+     * @return PropelObjectCollection|CmsType[] List of CmsType objects
+     */
+    public function getCmsTypes($criteria = null, PropelPDO $con = null)
+    {
+        if (null === $this->collCmsTypes || null !== $criteria) {
+            if ($this->isNew() && null === $this->collCmsTypes) {
+                // return empty collection
+                $this->initCmsTypes();
+            } else {
+                $collCmsTypes = CmsTypeQuery::create(null, $criteria)
+                    ->filterByCmsContent($this)
+                    ->find($con);
+                if (null !== $criteria) {
+                    return $collCmsTypes;
+                }
+                $this->collCmsTypes = $collCmsTypes;
+            }
+        }
+
+        return $this->collCmsTypes;
+    }
+
+    /**
+     * Sets a collection of CmsType objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
+     * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+     * and new objects from the given Propel collection.
+     *
+     * @param PropelCollection $cmsTypes A Propel collection.
+     * @param PropelPDO $con Optional connection object
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function setCmsTypes(PropelCollection $cmsTypes, PropelPDO $con = null)
+    {
+        $this->clearCmsTypes();
+        $currentCmsTypes = $this->getCmsTypes(null, $con);
+
+        $this->cmsTypesScheduledForDeletion = $currentCmsTypes->diff($cmsTypes);
+
+        foreach ($cmsTypes as $cmsType) {
+            if (!$currentCmsTypes->contains($cmsType)) {
+                $this->doAddCmsType($cmsType);
+            }
+        }
+
+        $this->collCmsTypes = $cmsTypes;
+
+        return $this;
+    }
+
+    /**
+     * Gets the number of CmsType objects related by a many-to-many relationship
+     * to the current object by way of the cms_content_has_types cross-reference table.
+     *
+     * @param Criteria $criteria Optional query object to filter the query
+     * @param boolean $distinct Set to true to force count distinct
+     * @param PropelPDO $con Optional connection object
+     *
+     * @return int the number of related CmsType objects
+     */
+    public function countCmsTypes($criteria = null, $distinct = false, PropelPDO $con = null)
+    {
+        if (null === $this->collCmsTypes || null !== $criteria) {
+            if ($this->isNew() && null === $this->collCmsTypes) {
+                return 0;
+            } else {
+                $query = CmsTypeQuery::create(null, $criteria);
+                if ($distinct) {
+                    $query->distinct();
+                }
+
+                return $query
+                    ->filterByCmsContent($this)
+                    ->count($con);
+            }
+        } else {
+            return count($this->collCmsTypes);
+        }
+    }
+
+    /**
+     * Associate a CmsType object to this object
+     * through the cms_content_has_types cross reference table.
+     *
+     * @param  CmsType $cmsType The CmsContentHasTypes object to relate
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function addCmsType(CmsType $cmsType)
+    {
+        if ($this->collCmsTypes === null) {
+            $this->initCmsTypes();
+        }
+
+        if (!$this->collCmsTypes->contains($cmsType)) { // only add it if the **same** object is not already associated
+            $this->doAddCmsType($cmsType);
+            $this->collCmsTypes[] = $cmsType;
+
+            if ($this->cmsTypesScheduledForDeletion and $this->cmsTypesScheduledForDeletion->contains($cmsType)) {
+                $this->cmsTypesScheduledForDeletion->remove($this->cmsTypesScheduledForDeletion->search($cmsType));
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param	CmsType $cmsType The cmsType object to add.
+     */
+    protected function doAddCmsType(CmsType $cmsType)
+    {
+        // set the back reference to this object directly as using provided method either results
+        // in endless loop or in multiple relations
+        if (!$cmsType->getCmsContents()->contains($this)) { $cmsContentHasTypes = new CmsContentHasTypes();
+            $cmsContentHasTypes->setCmsType($cmsType);
+            $this->addCmsContentHasTypes($cmsContentHasTypes);
+
+            $foreignCollection = $cmsType->getCmsContents();
+            $foreignCollection[] = $this;
+        }
+    }
+
+    /**
+     * Remove a CmsType object to this object
+     * through the cms_content_has_types cross reference table.
+     *
+     * @param CmsType $cmsType The CmsContentHasTypes object to relate
+     * @return CmsContent The current object (for fluent API support)
+     */
+    public function removeCmsType(CmsType $cmsType)
+    {
+        if ($this->getCmsTypes()->contains($cmsType)) {
+            $this->collCmsTypes->remove($this->collCmsTypes->search($cmsType));
+            if (null === $this->cmsTypesScheduledForDeletion) {
+                $this->cmsTypesScheduledForDeletion = clone $this->collCmsTypes;
+                $this->cmsTypesScheduledForDeletion->clear();
+            }
+            $this->cmsTypesScheduledForDeletion[]= $cmsType;
+        }
+
+        return $this;
+    }
+
     /**
      * Clears the current object and sets all attributes to their default values
      */
@@ -1245,6 +1782,16 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
     {
         if ($deep && !$this->alreadyInClearAllReferencesDeep) {
             $this->alreadyInClearAllReferencesDeep = true;
+            if ($this->collCmsContentHasTypess) {
+                foreach ($this->collCmsContentHasTypess as $o) {
+                    $o->clearAllReferences($deep);
+                }
+            }
+            if ($this->collCmsTypes) {
+                foreach ($this->collCmsTypes as $o) {
+                    $o->clearAllReferences($deep);
+                }
+            }
             if ($this->aCmsCategory instanceof Persistent) {
               $this->aCmsCategory->clearAllReferences($deep);
             }
@@ -1252,6 +1799,14 @@ abstract class BaseCmsContent extends BaseObject implements Persistent
             $this->alreadyInClearAllReferencesDeep = false;
         } // if ($deep)
 
+        if ($this->collCmsContentHasTypess instanceof PropelCollection) {
+            $this->collCmsContentHasTypess->clearIterator();
+        }
+        $this->collCmsContentHasTypess = null;
+        if ($this->collCmsTypes instanceof PropelCollection) {
+            $this->collCmsTypes->clearIterator();
+        }
+        $this->collCmsTypes = null;
         $this->aCmsCategory = null;
     }
 

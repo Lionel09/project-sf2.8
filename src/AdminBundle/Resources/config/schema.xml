@@ -12,6 +12,14 @@
         <column name="online" type="boolean" />
     </table>
 
+    <table name="cms_type">
+        <behavior name="timestampable" />
+
+        <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+
+        <column name="title" type="varchar" size="250" />
+    </table>
+
     <table name="cms_content">
         <behavior name="timestampable" />
 
@@ -28,6 +36,22 @@
         
         <foreign-key foreignTable="cms_category" onDelete="SETNULL" onUpdate="CASCADE">
             <reference local="cms_category_id" foreign="id" />
+        </foreign-key>
+    </table>
+
+    <table name="cms_content_has_types" isCrossRef="true">
+        <behavior name="timestampable" />
+        <behavior name="query_cache" />
+
+        <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+        <column name="cms_content_id" type="integer" required="true" />
+        <column name="cms_type_id" type="integer" required="true" />
+
+        <foreign-key foreignTable="cms_content" onDelete="CASCADE" onUpdate="CASCADE">
+            <reference local="cms_content_id" foreign="id" />
+        </foreign-key>
+        <foreign-key foreignTable="cms_type" onDelete="CASCADE" onUpdate="CASCADE">
+            <reference local="cms_type_id" foreign="id" />
         </foreign-key>
     </table>
 
